@@ -10,7 +10,7 @@ class CheckboxItem {
   String label; // Text label to display
   bool isChecked; // Current checked state
   String soundPath; // Filepath for 'check' sound
-  String imagePath; // Image for task set
+  String imagePath; // Image for checklist item
   CheckboxItem({
     required this.label,
     required this.soundPath,
@@ -61,7 +61,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     CheckboxItem(
       label: 'Black Stake',
       soundPath: 'assets/sounds/xmult1.wav',
-      imagePath: 'black-stake.png',
+      imagePath: 'assets/images/black-stake.png',
     ),
     CheckboxItem(
       label: 'Blue Stake',
@@ -121,7 +121,8 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
             title: Row(
               children: [
                 Image.asset(
-                  'assets/my_image.png', // Replace with your image
+                  // Get image for each checklist item
+                  items[index].imagePath,
                   width: 32,
                   height: 32,
                 ),
