@@ -2,22 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(
+    Center(
+      child: SizedBox(
+        width: 412, // Simulates a large Android phone
+        height: 915,
+        child: MyApp(),
+      ),
+    ),
+  );
 }
 
 class PixelArtConfig {
-  static const double globalScale = 15.0; // Default scale for pixel art
+  static const double globalScale = 4.0; // Default scale for pixel art
   static const double basePixelSize = 27.0;
-  static const double maxRenderSize = 64.0;
 }
 
 // Data model for a checkbox item
 class CheckboxItem {
-  String label; // Text label to display
-  bool isChecked; // Current checked state
-  final String soundPath; // Filepath for 'check' sound
-  final String imagePath; // Image for checklist item
-  final double? customScale; // Optional override
+  String label;
+  bool isChecked;
+  final String soundPath;
+  final String imagePath;
+  final double? customScale;
+
   CheckboxItem({
     required this.label,
     required this.soundPath,
@@ -30,13 +38,12 @@ class CheckboxItem {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // Root widget of the app
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Custom Checkbox App',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: CheckboxScreen(), // Loads the main screen
+      home: CheckboxScreen(),
     );
   }
 }
@@ -49,7 +56,6 @@ class CheckboxScreen extends StatefulWidget {
 }
 
 class _CheckboxScreenState extends State<CheckboxScreen> {
-  // Hardcoded list of checkbox items
   final List<CheckboxItem> items = [
     CheckboxItem(
       label: 'White Stake',
@@ -93,16 +99,13 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     ),
   ];
 
-  // AudioPlayer instance to handle sound playback
   final AudioPlayer _audioPlayer = AudioPlayer();
 
-  // Play sound when a checkbox is toggled
   void _playSound(String path) async {
     final relativePath = path.replaceFirst('assets/', '');
     await _audioPlayer.play(AssetSource(relativePath));
   }
 
-  // Toggle the checkbox and play the sound
   void _toggleCheckbox(int index) {
     setState(() {
       items[index].isChecked = !items[index].isChecked;
@@ -112,7 +115,6 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
 
   @override
   void dispose() {
-    // Dispose of the audio player when the widget is destroyed
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -120,48 +122,59 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('My Daily Checklist')),
-      body: ListView.builder(
-        itemCount: items.length, // Fixed number of checkboxes
-        itemBuilder: (context, index) {
-          // Prevents current checkbox item from being incorrectly reassigned
-          final item = items[index];
-          // Use customScale if set, otherwise, use global pixel scaling
-          final double scale = item.customScale ?? PixelArtConfig.globalScale;
-          final double displaySize = PixelArtConfig.basePixelSize * scale;
+      body: Stack(
+        children: [
+          Positioned.fill(
+            // Fit background to display dims and center
+            child: FittedBox(
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+              child: Image.asset('assets/images/background.jpg'),
+            ),
+          ),
+          ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final item = items[index];
+              final scale = item.customScale ?? PixelArtConfig.globalScale;
+              final displaySize = PixelArtConfig.basePixelSize * scale;
 
-          // Must wrap checklist tile in fixed-size container
-          // Otherwise tile grows out of proportion to larger pixel art
-          return SizedBox(
-            height: 72, // fixed tile height
-            child: CheckboxListTile(
-              contentPadding: EdgeInsets.symmetric(horizontal: 12),
-              title: Row(
-                children: [
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: PixelArtConfig.maxRenderSize,
-                      maxHeight: PixelArtConfig.maxRenderSize,
-                    ),
-                    child: SizedBox(
-                      width: displaySize,
-                      height: displaySize,
-                      child: Image.asset(
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.all(8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Image.asset(
                         item.imagePath,
+                        width: displaySize,
+                        height: displaySize,
                         filterQuality: FilterQuality.none,
                         isAntiAlias: false,
                       ),
-                    ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          item.label,
+                          style: TextStyle(fontSize: 18, color: Colors.black),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Checkbox(
+                        value: item.isChecked,
+                        onChanged: (_) => _toggleCheckbox(index),
+                      ),
+                    ],
                   ),
-                  SizedBox(width: 10),
-                  Expanded(child: Text(item.label)),
-                ],
-              ),
-              value: item.isChecked,
-              onChanged: (_) => _toggleCheckbox(index),
-            ),
-          );
-        },
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
