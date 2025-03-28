@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
+import 'start_screen.dart';
 
 void main() {
   runApp(
@@ -8,7 +9,7 @@ void main() {
       child: SizedBox(
         width: 412, // Simulates a large Android phone
         height: 915,
-        child: MyApp(),
+        child: RootApp(),
       ),
     ),
   );
@@ -36,28 +37,45 @@ class CheckboxItem {
   });
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class RootApp extends StatefulWidget {
+  const RootApp({super.key});
+
+  @override
+  State<RootApp> createState() => _RootAppState();
+}
+
+class _RootAppState extends State<RootApp> {
+  int? _maxStakeIndex; // null until the user selects one
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Custom Checkbox App',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: CheckboxScreen(),
+      home:
+          _maxStakeIndex == null
+              ? StartScreen(
+                onStart: (index) {
+                  setState(() {
+                    _maxStakeIndex = index;
+                  });
+                },
+              )
+              : CheckboxScreen(maxStakeIndex: _maxStakeIndex!),
     );
   }
 }
 
 class CheckboxScreen extends StatefulWidget {
-  const CheckboxScreen({super.key});
+  final int maxStakeIndex;
+  const CheckboxScreen({super.key, required this.maxStakeIndex});
 
   @override
   _CheckboxScreenState createState() => _CheckboxScreenState();
 }
 
 class _CheckboxScreenState extends State<CheckboxScreen> {
-  final List<CheckboxItem> items = [
+  final List<CheckboxItem> allItems = [
     CheckboxItem(
       label: 'White Stake',
       soundPath: 'assets/sounds/mult1.wav',
@@ -99,6 +117,13 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
       imagePath: 'assets/images/gold-stake.png',
     ),
   ];
+  late final List<CheckboxItem> items;
+
+  @override
+  void initState() {
+    super.initState();
+    items = allItems.sublist(0, widget.maxStakeIndex + 1);
+  }
 
   final AudioPlayer _audioPlayer = AudioPlayer();
 
