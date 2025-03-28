@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(
@@ -14,7 +15,7 @@ void main() {
 }
 
 class PixelArtConfig {
-  static const double globalScale = 4.0; // Default scale for pixel art
+  static const double globalScale = 2.0; // Default scale for pixel art
   static const double basePixelSize = 27.0;
 }
 
@@ -106,11 +107,26 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     await _audioPlayer.play(AssetSource(relativePath));
   }
 
-  void _toggleCheckbox(int index) {
+  void _toggleCheckbox(int index) async {
     setState(() {
       items[index].isChecked = !items[index].isChecked;
     });
-    _playSound(items[index].soundPath);
+    // Only play sound if item is being checked
+    if (items[index].isChecked) {
+      _playSound(items[index].soundPath);
+
+      final completed = items.where((item) => item.isChecked).length;
+      // Vary vibration based on how many items are checked
+      if (completed >= 6) {
+        await HapticFeedback.heavyImpact(); // Strong feedback
+      } else if (completed >= 3) {
+        await HapticFeedback.mediumImpact(); // Medium feedback
+      } else {
+        await HapticFeedback.lightImpact(); // Light feedback
+      }
+    } else {
+      await HapticFeedback.selectionClick(); // Gentle vibration on uncheck
+    }
   }
 
   @override
@@ -125,7 +141,6 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
       body: Stack(
         children: [
           Positioned.fill(
-            // Fit background to display dims and center
             child: FittedBox(
               fit: BoxFit.cover,
               alignment: Alignment.center,
@@ -149,12 +164,17 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Image.asset(
-                        item.imagePath,
-                        width: displaySize,
-                        height: displaySize,
-                        filterQuality: FilterQuality.none,
-                        isAntiAlias: false,
+                      ClipRect(
+                        child: SizedBox(
+                          width: displaySize,
+                          height: displaySize,
+                          child: Image.asset(
+                            item.imagePath,
+                            fit: BoxFit.cover, // crop to fill space
+                            filterQuality: FilterQuality.none,
+                            isAntiAlias: false,
+                          ),
+                        ),
                       ),
                       SizedBox(width: 12),
                       Expanded(
