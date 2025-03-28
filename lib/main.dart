@@ -5,16 +5,24 @@ void main() {
   runApp(MyApp());
 }
 
+class PixelArtConfig {
+  static const double globalScale = 15.0; // Default scale for pixel art
+  static const double basePixelSize = 27.0;
+  static const double maxRenderSize = 64.0;
+}
+
 // Data model for a checkbox item
 class CheckboxItem {
   String label; // Text label to display
   bool isChecked; // Current checked state
-  String soundPath; // Filepath for 'check' sound
-  String imagePath; // Image for checklist item
+  final String soundPath; // Filepath for 'check' sound
+  final String imagePath; // Image for checklist item
+  final double? customScale; // Optional override
   CheckboxItem({
     required this.label,
     required this.soundPath,
     required this.imagePath,
+    this.customScale,
     this.isChecked = false,
   });
 }
@@ -116,22 +124,42 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
       body: ListView.builder(
         itemCount: items.length, // Fixed number of checkboxes
         itemBuilder: (context, index) {
-          return CheckboxListTile(
-            // Each checkbox shows an image + label
-            title: Row(
-              children: [
-                Image.asset(
-                  // Get image for each checklist item
-                  items[index].imagePath,
-                  width: 32,
-                  height: 32,
-                ),
-                SizedBox(width: 10),
-                Expanded(child: Text(items[index].label)),
-              ],
+          // Prevents current checkbox item from being incorrectly reassigned
+          final item = items[index];
+          // Use customScale if set, otherwise, use global pixel scaling
+          final double scale = item.customScale ?? PixelArtConfig.globalScale;
+          final double displaySize = PixelArtConfig.basePixelSize * scale;
+
+          // Must wrap checklist tile in fixed-size container
+          // Otherwise tile grows out of proportion to larger pixel art
+          return SizedBox(
+            height: 72, // fixed tile height
+            child: CheckboxListTile(
+              contentPadding: EdgeInsets.symmetric(horizontal: 12),
+              title: Row(
+                children: [
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: PixelArtConfig.maxRenderSize,
+                      maxHeight: PixelArtConfig.maxRenderSize,
+                    ),
+                    child: SizedBox(
+                      width: displaySize,
+                      height: displaySize,
+                      child: Image.asset(
+                        item.imagePath,
+                        filterQuality: FilterQuality.none,
+                        isAntiAlias: false,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(child: Text(item.label)),
+                ],
+              ),
+              value: item.isChecked,
+              onChanged: (_) => _toggleCheckbox(index),
             ),
-            value: items[index].isChecked, // Current checked state
-            onChanged: (_) => _toggleCheckbox(index), // Toggle on tap
           );
         },
       ),
