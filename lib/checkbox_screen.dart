@@ -3,6 +3,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
 import 'win_screen.dart';
 import 'models.dart';
+import 'start_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert'; // For JSON handling
 
@@ -15,6 +16,36 @@ class CheckboxScreen extends StatefulWidget {
 }
 
 class _CheckboxScreenState extends State<CheckboxScreen> {
+  // Flag to enable reset for debugging
+  static const bool debugMode = true; // Set to false for testers
+
+  // Reset method for debugging
+  Future<void> _resetApp() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); // Clear all saved data
+
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder:
+              (context) => StartScreen(
+                onStart: (index) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => CheckboxScreen(maxStakeIndex: index),
+                    ),
+                  );
+                },
+              ),
+        ),
+        (route) => false, // Remove all previous routes
+      );
+    }
+  }
+
   final List<CheckboxItem> allItems = [
     CheckboxItem(
       label: 'White Stake',
@@ -228,6 +259,26 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
                                     ? (_) => _toggleCheckbox(index)
                                     : null,
                           ),
+                          // Add debug button in top-right corner
+                          if (debugMode)
+                            Positioned(
+                              top: 40,
+                              right: 20,
+                              child: ElevatedButton(
+                                onPressed: _resetApp,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                ),
+                                child: const Text(
+                                  'DEBUG RESET',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
 

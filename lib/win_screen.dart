@@ -30,48 +30,59 @@ class _WinScreenState extends State<WinScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black.withValues(),
-      body:
-      // Congratulations message after winning!
-      Center(
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.white, width: 3),
+      backgroundColor: Colors.black,
+      body: Stack(
+        // <-- This is the key change - using Stack instead of direct children
+        children: [
+          // Background image (same as main screen)
+          Positioned.fill(
+            child: FittedBox(
+              fit: BoxFit.cover,
+              child: Image.asset('assets/images/background.jpg'),
+            ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Congratulations!',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                ),
+          // Congratulations message after winning!
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.white, width: 3),
               ),
-              const SizedBox(height: 20),
-              const Text(
-                'You finished everything!',
-                style: TextStyle(color: Colors.white, fontSize: 24),
-              ),
-              const SizedBox(height: 40),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 16,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Congratulations!',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                child: const Text('Back to Stakes'),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'You finished everything!',
+                    style: TextStyle(color: Colors.white, fontSize: 24),
+                  ),
+                  const SizedBox(height: 40),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 40,
+                        vertical: 16,
+                      ),
+                    ),
+                    child: const Text('Back to Stakes'),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
