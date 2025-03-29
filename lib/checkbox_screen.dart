@@ -38,7 +38,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
   }
 
   Future<void> _playMainMusic() async {
-    await _musicPlayer.play(AssetSource('sounds/main_music.wav'));
+    await _musicPlayer.play(AssetSource('sounds/main_theme.mp3'));
   }
 
   Future<void> _stopMainMusic() async {
@@ -80,7 +80,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
   }
 
   // SUBTASK MANAGEMENT
-  void _deleteSubtask(int stakeIndex, int subtaskIndex) {
+  void _deleteSubtask(int stakeIndex, int subtaskIndex) async {
     setState(() {
       items[stakeIndex].subtasks.removeAt(subtaskIndex);
       // Uncheck stake if it was checked
@@ -89,6 +89,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
         _cascadeUncheck(stakeIndex);
       }
     });
+    await _playRemoveSubtaskSound();
     _saveSubtasks();
   }
 
@@ -143,6 +144,14 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     ),
   ];
 
+  Future<void> _playAddSubtaskSound() async {
+    await _audioPlayer.play(AssetSource('sounds/subtask_add.wav'));
+  }
+
+  Future<void> _playRemoveSubtaskSound() async {
+    await _audioPlayer.play(AssetSource('sounds/subtask_remove.wav'));
+  }
+
   Future<void> _loadSubtasks() async {
     final prefs = await SharedPreferences.getInstance();
     final savedSubtasks = prefs.getString('subtasks');
@@ -182,15 +191,24 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
   void _checkWinCondition() async {
     final allChecked = items.every((item) => item.isChecked);
     if (allChecked) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const WinScreen()),
-      );
+      final winSoundPlayer = AudioPlayer();
+      // Done to prevent win sound from playing here before on the win screen
+      winSoundPlayer.play(AssetSource('sounds/placeholder.wav'));
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => WinScreen(winSoundPlayer: winSoundPlayer),
+          ),
+        );
+      }
       await _stopMainMusic();
       if (mounted) {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const WinScreen()),
+          MaterialPageRoute(
+            builder: (context) => WinScreen(winSoundPlayer: winSoundPlayer),
+          ),
         );
       }
     }
@@ -250,7 +268,6 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     _playSound('assets/sounds/subtask_done.wav');
   }
 
-  // Complete the _showAddSubtaskDialog method
   void _showAddSubtaskDialog(int stakeIndex) {
     final controller = TextEditingController();
 
@@ -269,12 +286,14 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
                 child: const Text('Cancel'),
               ),
               TextButton(
-                onPressed: () {
-                  _addSubtask(
-                    stakeIndex,
-                    controller.text,
-                  ); // Now using controller
-                  Navigator.pop(context);
+                onPressed: () async {
+                  if (controller.text.trim().isNotEmpty) {
+                    _addSubtask(stakeIndex, controller.text);
+                    await _playAddSubtaskSound();
+                  }
+                  if (mounted) {
+                    Navigator.pop(context);
+                  }
                 },
                 child: const Text('Add'),
               ),
@@ -283,12 +302,13 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     );
   }
 
-  void _addSubtask(int stakeIndex, String text) {
+  void _addSubtask(int stakeIndex, String text) async {
     if (text.trim().isEmpty) return;
 
     setState(() {
       items[stakeIndex].subtasks.add(Subtask(text));
     });
+    await _playAddSubtaskSound();
     _saveSubtasks();
   }
 

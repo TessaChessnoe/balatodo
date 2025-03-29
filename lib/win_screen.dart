@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 class WinScreen extends StatefulWidget {
-  const WinScreen({super.key});
+  final AudioPlayer winSoundPlayer;
+  const WinScreen({super.key, required this.winSoundPlayer});
 
   @override
   State<WinScreen> createState() => _WinScreenState();
@@ -23,7 +24,8 @@ class _WinScreenState extends State<WinScreen> {
 
   @override
   void dispose() {
-    _audioPlayer.dispose();
+    // Allows user to skip fanfare by hitting 'back to stakes'
+    widget.winSoundPlayer.stop(); // Stop sound when screen is disposed
     super.dispose();
   }
 
@@ -68,7 +70,10 @@ class _WinScreenState extends State<WinScreen> {
                   ),
                   const SizedBox(height: 40),
                   ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      widget.winSoundPlayer.stop();
+                      Navigator.pop(context);
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       padding: const EdgeInsets.symmetric(
