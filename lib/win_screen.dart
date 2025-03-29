@@ -46,7 +46,7 @@ class _WinScreenState extends State<WinScreen> {
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.8),
+                color: Colors.black.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: Colors.white, width: 3),
               ),

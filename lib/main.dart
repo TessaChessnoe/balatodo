@@ -61,7 +61,7 @@ class RootApp extends StatefulWidget {
 class _RootAppState extends State<RootApp> {
   int? _maxStakeIndex;
   late SharedPreferences _prefs;
-  DateTime? _lastResetDate;
+  //DateTime? _lastResetDate;
 
   @override
   void initState() {

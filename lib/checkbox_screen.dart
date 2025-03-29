@@ -18,12 +18,37 @@ class CheckboxScreen extends StatefulWidget {
 class _CheckboxScreenState extends State<CheckboxScreen> {
   // Flag to enable reset for debugging
   static const bool debugMode = true; // Set to false for testers
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  final AudioPlayer _musicPlayer = AudioPlayer();
+  late final List<CheckboxItem> items;
+
+  @override
+  void initState() {
+    super.initState();
+    items = allItems.sublist(0, widget.maxStakeIndex + 1);
+    _loadSubtasks(); // Load saved subtasks
+    _playMainMusic(); // Play Balatro main theme
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    _musicPlayer.dispose();
+    super.dispose();
+  }
+
+  Future<void> _playMainMusic() async {
+    await _musicPlayer.play(AssetSource('sounds/main_music.wav'));
+  }
+
+  Future<void> _stopMainMusic() async {
+    await _musicPlayer.stop();
+  }
 
   // Reset method for debugging
   Future<void> _resetApp() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear(); // Clear all saved data
-
     if (mounted) {
       Navigator.pushAndRemoveUntil(
         context,
@@ -44,6 +69,35 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
         (route) => false, // Remove all previous routes
       );
     }
+  }
+
+  Future<void> _resetSubtasksForStake(int stakeIndex) async {
+    setState(() {
+      items[stakeIndex].subtasks.clear();
+      items[stakeIndex].isChecked = false;
+    });
+    await _saveSubtasks();
+  }
+
+  // SUBTASK MANAGEMENT
+  void _deleteSubtask(int stakeIndex, int subtaskIndex) {
+    setState(() {
+      items[stakeIndex].subtasks.removeAt(subtaskIndex);
+      // Uncheck stake if it was checked
+      if (items[stakeIndex].isChecked) {
+        items[stakeIndex].isChecked = false;
+        _cascadeUncheck(stakeIndex);
+      }
+    });
+    _saveSubtasks();
+  }
+
+  void _cascadeUncheck(int fromIndex) {
+    setState(() {
+      for (int i = fromIndex; i < items.length; i++) {
+        items[i].isChecked = false;
+      }
+    });
   }
 
   final List<CheckboxItem> allItems = [
@@ -88,16 +142,6 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
       imagePath: 'assets/images/gold-stake.png',
     ),
   ];
-  late final List<CheckboxItem> items;
-
-  final AudioPlayer _audioPlayer = AudioPlayer();
-
-  @override
-  void initState() {
-    super.initState();
-    items = allItems.sublist(0, widget.maxStakeIndex + 1);
-    _loadSubtasks(); // Load saved subtasks
-  }
 
   Future<void> _loadSubtasks() async {
     final prefs = await SharedPreferences.getInstance();
@@ -135,14 +179,20 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     await prefs.setString('subtasks', jsonEncode(subtasksJson));
   }
 
-  void _checkWinCondition() {
+  void _checkWinCondition() async {
     final allChecked = items.every((item) => item.isChecked);
     if (allChecked) {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const WinScreen()),
       );
-      //_playSound('assets/sounds/final-mult.wav'); // Or your win sound
+      await _stopMainMusic();
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const WinScreen()),
+        );
+      }
     }
   }
 
@@ -154,7 +204,12 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
   void _toggleCheckbox(int index) async {
     if (!_canCheckStake(index)) return;
     setState(() {
-      items[index].isChecked = !items[index].isChecked;
+      // If unchecking, cascade uncheck all higher stakes
+      if (items[index].isChecked) {
+        _cascadeUncheck(index);
+      } else {
+        items[index].isChecked = true;
+      }
     });
     // Only play sound if item is being checked
     if (items[index].isChecked) {
@@ -181,7 +236,8 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
       if (!items[i].isChecked) return false;
     }
     // Check subtasks
-    return items[index].subtasks.every((subtask) => subtask.isCompleted);
+    return items[index].subtasks.isEmpty ||
+        items[index].subtasks.every((subtask) => subtask.isCompleted);
   }
 
   // Add these new methods for subtasks
@@ -194,140 +250,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     _playSound('assets/sounds/subtask_done.wav');
   }
 
-  void _addSubtask(int stakeIndex, String text) {
-    if (text.trim().isEmpty) return;
-
-    setState(() {
-      items[stakeIndex].subtasks.add(Subtask(text));
-    });
-    _saveSubtasks();
-  }
-
-  // Update build method to show subtasks
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Background image
-          Positioned.fill(
-            child: FittedBox(
-              fit: BoxFit.cover,
-              child: Image.asset('assets/images/background.jpg'),
-            ),
-          ),
-
-          ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              final scale = item.customScale ?? PixelArtConfig.globalScale;
-              final displaySize = PixelArtConfig.basePixelSize * scale;
-
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Container(
-                  color: Colors.white.withValues(),
-                  padding: const EdgeInsets.all(8),
-                  child: Column(
-                    children: [
-                      // Stake row
-                      Row(
-                        children: [
-                          ClipRect(
-                            child: SizedBox(
-                              width: displaySize,
-                              height: displaySize,
-                              child: Image.asset(
-                                item.imagePath,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              item.label,
-                              style: const TextStyle(fontSize: 18),
-                            ),
-                          ),
-                          Checkbox(
-                            value: item.isChecked,
-                            onChanged:
-                                _canCheckStake(index)
-                                    ? (_) => _toggleCheckbox(index)
-                                    : null,
-                          ),
-                          // Add debug button in top-right corner
-                          if (debugMode)
-                            Positioned(
-                              top: 40,
-                              right: 20,
-                              child: ElevatedButton(
-                                onPressed: _resetApp,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
-                                ),
-                                child: const Text(
-                                  'DEBUG RESET',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-
-                      // Subtasks
-                      Column(
-                        children: [
-                          ...item.subtasks.map(
-                            (subtask) => GestureDetector(
-                              onTap:
-                                  () => _toggleSubtask(
-                                    index,
-                                    item.subtasks.indexOf(subtask),
-                                  ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 4,
-                                ),
-                                child: Text(
-                                  subtask.text,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    decoration:
-                                        subtask.isCompleted
-                                            ? TextDecoration.lineThrough
-                                            : null,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // Add subtask button
-                          TextButton(
-                            onPressed: () => _showAddSubtaskDialog(index),
-                            child: const Text('+ Add Subtask'),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
+  // Complete the _showAddSubtaskDialog method
   void _showAddSubtaskDialog(int stakeIndex) {
     final controller = TextEditingController();
 
@@ -347,13 +270,182 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
               ),
               TextButton(
                 onPressed: () {
-                  _addSubtask(stakeIndex, controller.text);
+                  _addSubtask(
+                    stakeIndex,
+                    controller.text,
+                  ); // Now using controller
                   Navigator.pop(context);
                 },
                 child: const Text('Add'),
               ),
             ],
           ),
+    );
+  }
+
+  void _addSubtask(int stakeIndex, String text) {
+    if (text.trim().isEmpty) return;
+
+    setState(() {
+      items[stakeIndex].subtasks.add(Subtask(text));
+    });
+    _saveSubtasks();
+  }
+
+  // Update build method to show subtasks
+  @override
+  Widget build(BuildContext context) {
+    final whiteWithOpacity = Colors.white.withAlpha(
+      204,
+    ); // ~80% opacity (255 * 0.8)
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Background image
+          Positioned.fill(
+            child: FittedBox(
+              fit: BoxFit.cover,
+              child: Image.asset('assets/images/background.jpg'),
+            ),
+          ),
+
+          // Main content column
+          Column(
+            children: [
+              // Stake list
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 24,
+                    horizontal: 16,
+                  ),
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    return _buildStakeRow(index, whiteWithOpacity);
+                  },
+                ),
+              ),
+
+              // Debug reset button (bottom center)
+              if (debugMode)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: Center(
+                    child: ElevatedButton(
+                      onPressed: _resetApp,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: const Text(
+                        'RESET TO STAKE SELECT',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStakeRow(int index, Color backgroundWhite) {
+    final item = items[index];
+    final scale = item.customScale ?? PixelArtConfig.globalScale;
+    final displaySize = PixelArtConfig.basePixelSize * scale;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: backgroundWhite,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            // Stake header row
+            Row(
+              children: [
+                // Stake image
+                ClipRect(
+                  child: SizedBox(
+                    width: displaySize,
+                    height: displaySize,
+                    child: Image.asset(item.imagePath, fit: BoxFit.cover),
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Stake label
+                Expanded(
+                  child: Text(item.label, style: const TextStyle(fontSize: 18)),
+                ),
+
+                // Reset subtasks button for this stake
+                IconButton(
+                  icon: const Icon(Icons.restart_alt, color: Colors.blue),
+                  onPressed: () => _resetSubtasksForStake(index),
+                ),
+
+                // Main checkbox
+                Checkbox(
+                  value: item.isChecked,
+                  onChanged:
+                      _canCheckStake(index)
+                          ? (_) => _toggleCheckbox(index)
+                          : null,
+                ),
+              ],
+            ),
+
+            // Subtasks list
+            Column(
+              children: [
+                ...item.subtasks.map(
+                  (subtask) => ListTile(
+                    title: Text(
+                      subtask.text,
+                      style: TextStyle(
+                        fontSize: 16,
+                        decoration:
+                            subtask.isCompleted
+                                ? TextDecoration.lineThrough
+                                : null,
+                      ),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed:
+                          () => _deleteSubtask(
+                            index,
+                            item.subtasks.indexOf(subtask),
+                          ),
+                    ),
+                    onTap:
+                        () => _toggleSubtask(
+                          index,
+                          item.subtasks.indexOf(subtask),
+                        ),
+                  ),
+                ),
+
+                // Add subtask button
+                TextButton(
+                  onPressed: () => _showAddSubtaskDialog(index),
+                  child: const Text('+ Add Subtask'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
