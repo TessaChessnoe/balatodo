@@ -1,6 +1,9 @@
+<!--This file declares your app's id, permissions and additional services-->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--Used for system-level id on android devices-->
+    <package="com.tesspresso.balatodo">
     <application
-        android:label="temp"
+        android:label="BalaTo-Do"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -1,0 +1,7 @@
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app-icon.png"
+  # No plans to change app fg and bg for icon variants
+  android_adaptive_icon_foreground: null  
+  android_adaptive_icon_background: null 
