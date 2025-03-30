@@ -7,7 +7,6 @@ import 'dart:convert'; // For JSON handling
 import 'win_screen.dart';
 import 'models.dart';
 import 'start_screen.dart';
-import 'music_player.dart';
 // To access global musicPlayer
 import 'main.dart';
 
@@ -38,7 +37,6 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
   @override
   void dispose() {
     _audioPlayer.dispose();
-    musicPlayer.dispose();
     super.dispose();
   }
 

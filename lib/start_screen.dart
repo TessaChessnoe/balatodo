@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 
-import 'music_player.dart';
 // To access global musicPlayer
 import 'main.dart';
 
