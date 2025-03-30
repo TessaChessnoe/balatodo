@@ -2,6 +2,12 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MusicPlayer {
+  // Final and _instance ensure only one singleton is created
+  static final MusicPlayer _instance = MusicPlayer._internal();
+  // Singleton factory
+  factory MusicPlayer() => _instance;
+  MusicPlayer._internal(); // Private named constructor
+
   final AudioPlayer _player = AudioPlayer();
   String? _currentTrack;
   double _volume = 1.0;
@@ -31,9 +37,10 @@ class MusicPlayer {
     );
   }
 
-  /// Stops playback and optionally saves the current position.
-  Future<void> stop({bool savePosition = false}) async {
-    if (savePosition && _currentTrack != null) {
+  // Stops track and saves timestamp
+  Future<void> pause() async {
+    await _player.pause();
+    if (_currentTrack != null) {
       final position = await _player.getCurrentPosition();
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt(
@@ -41,6 +48,17 @@ class MusicPlayer {
         position?.inMilliseconds ?? 0,
       );
     }
+  }
+
+  // Resumes from key stored in pause
+  Future<void> resume() async {
+    if (_currentTrack != null) {
+      await _player.resume();
+    }
+  }
+
+  /// Stops playback w/o storing timestamp
+  Future<void> stop() async {
     await _player.stop();
   }
 
@@ -49,5 +67,6 @@ class MusicPlayer {
     _player.dispose();
   }
 
+  // Creates unique key to resume each track
   String _resumeKey(String path) => 'music_resume_${path.hashCode}';
 }

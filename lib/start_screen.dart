@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+
 import 'music_player.dart';
+// To access global musicPlayer
+import 'main.dart';
 
 /// StartScreen is the initial screen where users select their maximum stake level
 /// before starting the game. It takes a callback function [onStart] that is called
@@ -18,7 +21,7 @@ class _StartScreenState extends State<StartScreen> {
   // Declare Audio player obj for tap sound effects
   final AudioPlayer _audioPlayer = AudioPlayer();
   // Declare Music player obj for start screen music
-  final MusicPlayer _musicPlayer = MusicPlayer();
+  //final MusicPlayer _musicPlayer = MusicPlayer();
   // Start with white stake (index 0) selected by default
   int _selectedIndex = 0;
 
@@ -26,7 +29,8 @@ class _StartScreenState extends State<StartScreen> {
   @override
   void initState() {
     super.initState();
-    _playSelectMusic();
+    musicPlayer.play('music/start_theme.mp3', volume: 0.8, resume: true);
+    //_playSelectMusic();
   }
 
   // Labels for each stake level (available for future use if needed)
@@ -55,18 +59,6 @@ class _StartScreenState extends State<StartScreen> {
 
   Future<void> _playSelectStakeSound() async {
     await _audioPlayer.play(AssetSource('sounds/chip_click.wav'));
-  }
-
-  Future<void> _playSelectMusic() async {
-    await _musicPlayer.play('music/start_theme.mp3', volume: 0.8, resume: true);
-  }
-
-  Future<void> _pauseSelectMusic() async {
-    await _musicPlayer.stop(savePosition: true);
-  }
-
-  Future<void> _stopSelectMusic() async {
-    await _musicPlayer.stop(savePosition: false);
   }
 
   @override
@@ -133,7 +125,7 @@ class _StartScreenState extends State<StartScreen> {
             // Start button - always enabled since we have a default selection
             ElevatedButton(
               onPressed: () {
-                _pauseSelectMusic();
+                musicPlayer.pause();
                 widget.onStart(_selectedIndex);
               },
               style: ElevatedButton.styleFrom(

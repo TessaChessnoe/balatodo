@@ -8,6 +8,8 @@ import 'win_screen.dart';
 import 'models.dart';
 import 'start_screen.dart';
 import 'music_player.dart';
+// To access global musicPlayer
+import 'main.dart';
 
 class CheckboxScreen extends StatefulWidget {
   final int maxStakeIndex;
@@ -22,7 +24,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
 
   static const bool debugMode = true; // Set to false for testers
   final AudioPlayer _audioPlayer = AudioPlayer();
-  final MusicPlayer _musicPlayer = MusicPlayer();
+  //final MusicPlayer _musicPlayer = MusicPlayer();
   late final List<CheckboxItem> items;
 
   @override
@@ -30,26 +32,14 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     super.initState();
     items = allItems.sublist(0, widget.maxStakeIndex + 1);
     _loadSubtasks(); // Load saved subtasks
-    _playMainMusic(); // Play Balatro main theme
+    musicPlayer.play('music/main_theme.mp3', volume: 0.8);
   }
 
   @override
   void dispose() {
     _audioPlayer.dispose();
-    _musicPlayer.dispose();
+    musicPlayer.dispose();
     super.dispose();
-  }
-
-  Future<void> _playMainMusic() async {
-    await _musicPlayer.play('music/main_theme.mp3', volume: 0.8, resume: true);
-  }
-
-  Future<void> _pauseMainMusic() async {
-    await _musicPlayer.stop(savePosition: true);
-  }
-
-  Future<void> _stopMainMusic() async {
-    await _musicPlayer.stop(savePosition: false);
   }
 
   // Reset method for debugging
@@ -209,7 +199,8 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
           ),
         );
       }
-      await _pauseMainMusic();
+
+      musicPlayer.pause();
       if (mounted) {
         Navigator.push(
           context,

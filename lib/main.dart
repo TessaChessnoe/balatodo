@@ -4,6 +4,11 @@ import 'checkbox_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart'; // For date formatting
 
+// Required to declare musicPlayer singleton
+import 'music_player.dart';
+
+final MusicPlayer musicPlayer = MusicPlayer(); // global instance
+
 void main() {
   runApp(
     Center(
@@ -16,40 +21,6 @@ void main() {
   );
 }
 
-class PixelArtConfig {
-  static const double globalScale = 2.0; // Default scale for pixel art
-  static const double basePixelSize = 27.0;
-}
-
-// Data model for a checkbox item
-class CheckboxItem {
-  String label;
-  bool isChecked;
-  final String soundPath;
-  final String imagePath;
-  final double? customScale;
-  List<Subtask> subtasks;
-  DateTime lastUpdated;
-
-  CheckboxItem({
-    required this.label,
-    required this.soundPath,
-    required this.imagePath,
-    this.customScale,
-    this.isChecked = false,
-    List<Subtask>? subtasks,
-    DateTime? lastUpdated,
-  }) : subtasks = subtasks ?? [],
-       lastUpdated = lastUpdated ?? DateTime.now();
-}
-
-class Subtask {
-  String text;
-  bool isCompleted;
-
-  Subtask(this.text, {this.isCompleted = false});
-}
-
 class RootApp extends StatefulWidget {
   const RootApp({super.key});
 
@@ -57,22 +28,40 @@ class RootApp extends StatefulWidget {
   State<RootApp> createState() => _RootAppState();
 }
 
-// Update _RootAppState
-class _RootAppState extends State<RootApp> {
+// App state controller pushes different screens
+// Observer allows minimizing and closing app to be tracked
+class _RootAppState extends State<RootApp> with WidgetsBindingObserver {
   int? _maxStakeIndex;
   late SharedPreferences _prefs;
-  //DateTime? _lastResetDate;
 
   @override
   void initState() {
     super.initState();
+    // Create observer to check if app closed/minimized
+    WidgetsBinding.instance.addObserver(this);
     _initPrefs();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    musicPlayer.dispose(); // optional
+    super.dispose();
   }
 
   Future<void> _initPrefs() async {
     _prefs = await SharedPreferences.getInstance();
     _checkDailyReset();
     _loadState();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      musicPlayer.pause(); // App goes to tray or lock screen
+    } else if (state == AppLifecycleState.resumed) {
+      musicPlayer.resume(); // App comes back
+    }
   }
 
   void _checkDailyReset() {
