@@ -1,31 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'main.dart';
 
 class WinScreen extends StatefulWidget {
-  final AudioPlayer winSoundPlayer;
-  const WinScreen({super.key, required this.winSoundPlayer});
+  const WinScreen({super.key});
 
   @override
   State<WinScreen> createState() => _WinScreenState();
 }
 
 class _WinScreenState extends State<WinScreen> {
-  final AudioPlayer _audioPlayer = AudioPlayer();
-
   @override
   void initState() {
     super.initState();
-    _playWinSound();
-  }
-
-  Future<void> _playWinSound() async {
-    await _audioPlayer.play(AssetSource('sounds/win_music.wav'));
+    musicPlayer.play('music/win_theme.wav', volume: 1.0);
   }
 
   @override
   void dispose() {
     // Allows user to skip fanfare by hitting 'back to stakes'
-    widget.winSoundPlayer.stop(); // Stop sound when screen is disposed
     super.dispose();
   }
 
@@ -71,8 +63,14 @@ class _WinScreenState extends State<WinScreen> {
                   const SizedBox(height: 40),
                   ElevatedButton(
                     onPressed: () {
-                      widget.winSoundPlayer.stop();
-                      Navigator.pop(context);
+                      // Do not await before popping!
+                      final navigator = Navigator.of(
+                        context,
+                      ); // capture context before async
+                      musicPlayer.stop().then((_) {
+                        musicPlayer.play('music/main_theme.mp3', volume: 0.8);
+                        navigator.pop(); // Safe now!
+                      });
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,

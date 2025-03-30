@@ -186,25 +186,18 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
   void _checkWinCondition() async {
     final allChecked = items.every((item) => item.isChecked);
     if (allChecked) {
-      final winSoundPlayer = AudioPlayer();
-      // Done to prevent win sound from playing here before on the win screen
-      winSoundPlayer.play(AssetSource('sounds/placeholder.wav'));
       if (mounted) {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => WinScreen(winSoundPlayer: winSoundPlayer),
-          ),
+          MaterialPageRoute(builder: (context) => WinScreen()),
         );
       }
-
       musicPlayer.pause();
       if (mounted) {
+        musicPlayer.play('music/win_theme.wav', volume: 1.0);
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => WinScreen(winSoundPlayer: winSoundPlayer),
-          ),
+          MaterialPageRoute(builder: (context) => WinScreen()),
         );
       }
     }

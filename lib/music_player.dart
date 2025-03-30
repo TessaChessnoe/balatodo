@@ -19,6 +19,10 @@ class MusicPlayer {
     double volume = 1.0,
     bool resume = false,
   }) async {
+    // If played track is same as current, do nothing
+    if (_currentTrack == assetPath && _player.state == PlayerState.playing) {
+      return;
+    }
     _currentTrack = assetPath;
     // Copy state to public variable for later reuse
     _volume = volume;
