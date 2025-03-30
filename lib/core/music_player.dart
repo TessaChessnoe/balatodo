@@ -13,7 +13,7 @@ class MusicPlayer {
   final AudioPlayer _player = AudioPlayer();
   String? _currentTrack;
   String? get currentTrack => _currentTrack;
-  double _volume = 1.0;
+  double _volume = 0.8;
 
   /// Plays a music track from assets at a given [volume].
   /// Set [resume] to true to continue from where it left off last time.
@@ -23,9 +23,9 @@ class MusicPlayer {
     bool resume = false,
     bool loop = false,
   }) async {
-    if (debugAudio)
+    if (debugAudio) {
       print('🎵 play() called for: $assetPath (resume: $resume, loop: $loop)');
-
+    }
     if (_currentTrack == assetPath && _player.state == PlayerState.playing) {
       if (debugAudio) print('🔁 Already playing $assetPath');
       return;

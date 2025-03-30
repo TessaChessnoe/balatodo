@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:audioplayers/audioplayers.dart';
-
 // To access global musicPlayer
 import '../main.dart';
+// To access sound service
+import '../core/sound_service.dart';
 
 /// StartScreen is the initial screen where users select their maximum stake level
 /// before starting the game. It takes a callback function [onStart] that is called
@@ -17,10 +17,8 @@ class StartScreen extends StatefulWidget {
 }
 
 class _StartScreenState extends State<StartScreen> {
-  // Declare Audio player obj for tap sound effects
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  // Repsents selected maximum stake
   int _selectedIndex = 0;
-
   // Init start screen state with music
   @override
   void initState() {
@@ -57,10 +55,6 @@ class _StartScreenState extends State<StartScreen> {
     'assets/images/gold-stake.png',
   ];
 
-  Future<void> _playSelectStakeSound() async {
-    await _audioPlayer.play(AssetSource('sounds/chip_click.wav'));
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -72,7 +66,7 @@ class _StartScreenState extends State<StartScreen> {
           children: [
             // Title text explaining what the user should do
             const Text(
-              'Choose your max stake for today',
+              'Choose your max stake',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 24,
@@ -92,8 +86,8 @@ class _StartScreenState extends State<StartScreen> {
                   final isSelected = index == _selectedIndex;
 
                   return GestureDetector(
-                    onTap: () {
-                      _playSelectStakeSound();
+                    onTap: () async {
+                      await SoundService.play('assets/sounds/chip_click.wav');
                       setState(() {
                         _selectedIndex = index; // Update selection when tapped
                       });

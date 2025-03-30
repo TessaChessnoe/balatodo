@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 // To access global musicPlayer
 import '../main.dart';
 import '../core/storage_service.dart';
+import '../core/sound_service.dart';
 
 // Required to navigate to other screens
 import 'win_screen.dart';
@@ -114,7 +115,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
         _cascadeUncheck(stakeIndex);
       }
     });
-    await _playRemoveSubtaskSound();
+    await SoundService.play('assets/sounds/subtask_remove.wav');
     await StorageService.saveCheckboxItems(items);
   }
 
@@ -169,14 +170,6 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     ),
   ];
 
-  Future<void> _playAddSubtaskSound() async {
-    await _audioPlayer.play(AssetSource('sounds/subtask_add.wav'));
-  }
-
-  Future<void> _playRemoveSubtaskSound() async {
-    await _audioPlayer.play(AssetSource('sounds/subtask_remove.wav'));
-  }
-
   void _checkWinCondition() async {
     final allChecked = items.every((item) => item.isChecked);
     if (allChecked && mounted) {
@@ -186,11 +179,6 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
         MaterialPageRoute(builder: (context) => const WinScreen()),
       );
     }
-  }
-
-  void _playSound(String path) async {
-    final relativePath = path.replaceFirst('assets/', '');
-    await _audioPlayer.play(AssetSource(relativePath));
   }
 
   void _toggleCheckbox(int index) async {
@@ -205,7 +193,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     });
     // Only play sound if item is being checked
     if (items[index].isChecked) {
-      _playSound(items[index].soundPath);
+      await SoundService.play(items[index].soundPath);
       _checkWinCondition();
     } else {
       await HapticFeedback.selectionClick();
@@ -239,7 +227,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
           !items[stakeIndex].subtasks[subtaskIndex].isCompleted;
     });
     await StorageService.saveCheckboxItems(items);
-    _playSound('assets/sounds/subtask_done.wav');
+    await SoundService.play('assets/sounds/subtask_done.wav');
   }
 
   void _showAddSubtaskDialog(int stakeIndex) {
@@ -263,7 +251,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
                 onPressed: () async {
                   if (controller.text.trim().isNotEmpty) {
                     _addSubtask(stakeIndex, controller.text);
-                    await _playAddSubtaskSound();
+                    await SoundService.play('assets/sounds/subtask_add.wav');
                   }
                   if (mounted) {
                     Navigator.pop(context);
@@ -282,7 +270,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     setState(() {
       items[stakeIndex].subtasks.add(Subtask(text));
     });
-    await _playAddSubtaskSound();
+    await SoundService.play('assets/sounds/subtask_add.wav');
     await StorageService.saveCheckboxItems(items);
   }
 
