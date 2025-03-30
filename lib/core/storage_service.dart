@@ -6,34 +6,49 @@ import '../models/subtask.dart';
 
 // Saving and loading tasks (and eventually stake completion) goes here
 class StorageService {
-  // Define key for saved subtasks
-  static const String _key = 'subtasks';
+  // Define key for saved checkbox items
+  static const String _checkboxKey = 'checkbox_items';
 
-  static Future<void> saveSubtasks(List<CheckboxItem> items) async {
+  static Future<void> saveCheckboxItems(List<CheckboxItem> items) async {
     final prefs = await SharedPreferences.getInstance();
-    // Store state of subtasks in json for later loading
-    final subtasksJson =
+    final jsonData =
         items.map((item) {
-          return item.subtasks
-              .map((s) => {'text': s.text, 'isCompleted': s.isCompleted})
-              .toList();
+          return {
+            'label': item.label,
+            'isChecked': item.isChecked,
+            'soundPath': item.soundPath,
+            'imagePath': item.imagePath,
+            'customScale': item.customScale,
+            'lastUpdated': item.lastUpdated.toIso8601String(),
+            'subtasks':
+                item.subtasks
+                    .map((s) => {'text': s.text, 'isCompleted': s.isCompleted})
+                    .toList(),
+          };
         }).toList();
-
-    await prefs.setString(_key, jsonEncode(subtasksJson));
+    await prefs.setString(_checkboxKey, jsonEncode(jsonData));
   }
 
-  static Future<List<List<Subtask>>> loadSubtasks() async {
+  static Future<List<CheckboxItem>> loadCheckboxItems() async {
     final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString('subtasks');
-    // Do not load encoded subtask data if empty
-    if (saved == null) {
-      return [];
-    }
-    final decoded = jsonDecode(saved!) as List;
-    return decoded.map<List<Subtask>>((stakeSubtasks) {
-      return (stakeSubtasks as List).map((s) {
-        return Subtask(s['text'], isCompleted: s['isCompleted']);
-      }).toList();
+    final raw = prefs.getString(_checkboxKey);
+    if (raw == null) return [];
+
+    final List decoded = jsonDecode(raw);
+    return decoded.map<CheckboxItem>((json) {
+      return CheckboxItem(
+        label: json['label'],
+        isChecked: json['isChecked'],
+        soundPath: json['soundPath'],
+        imagePath: json['imagePath'],
+        customScale: json['customScale'],
+        lastUpdated:
+            DateTime.tryParse(json['lastUpdated'] ?? '') ?? DateTime.now(),
+        subtasks:
+            (json['subtasks'] as List).map<Subtask>((s) {
+              return Subtask(s['text'], isCompleted: s['isCompleted']);
+            }).toList(),
+      );
     }).toList();
   }
 }

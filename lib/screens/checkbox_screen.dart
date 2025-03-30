@@ -29,28 +29,37 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
 
   static const bool debugMode = true; // Set to false for testers
   final AudioPlayer _audioPlayer = AudioPlayer();
-  late final List<CheckboxItem> items;
+  // Removed lazy loading to prevent invalid vals before set state
+  List<CheckboxItem> items = [];
 
   @override
   void initState() {
     super.initState();
-    items = allItems.sublist(0, widget.maxStakeIndex + 1);
-
-    _initializeSubtasks();
-
+    // Replace loading saved subtasks w/ loading entire checkbox item's state
+    _initializeCheckboxItems();
     // Resume when it was the last track played
     if (musicPlayer.currentTrack == 'music/main_theme.mp3') {
       musicPlayer.resume();
     } else {
-      musicPlayer.play('music/main_theme.mp3', volume: 0.8);
+      musicPlayer.play(
+        'music/main_theme.mp3',
+        volume: 0.8,
+        resume: true,
+        loop: true,
+      );
     }
   }
 
-  Future<void> _initializeSubtasks() async {
-    final loaded = await StorageService.loadSubtasks();
+  Future<void> _initializeCheckboxItems() async {
+    final loaded = await StorageService.loadCheckboxItems();
+    // Create set of stakes with empty subtasks if other list exists
+    final fallback = allItems.sublist(0, widget.maxStakeIndex + 1);
     setState(() {
-      for (int i = 0; i < items.length && i < loaded.length; i++) {
-        items[i].subtasks = loaded[i];
+      if (loaded.isNotEmpty) {
+        items = loaded;
+      } else {
+        // Load checkbox items if there are any
+        items = loaded.isEmpty ? fallback : loaded;
       }
     });
   }
@@ -92,7 +101,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
       items[stakeIndex].subtasks.clear();
       items[stakeIndex].isChecked = false;
     });
-    await StorageService.saveSubtasks(items);
+    await StorageService.saveCheckboxItems(items);
   }
 
   // SUBTASK MANAGEMENT
@@ -106,7 +115,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
       }
     });
     await _playRemoveSubtaskSound();
-    await StorageService.saveSubtasks(items);
+    await StorageService.saveCheckboxItems(items);
   }
 
   void _cascadeUncheck(int fromIndex) {
@@ -201,7 +210,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     } else {
       await HapticFeedback.selectionClick();
     } // Gentle vibration on uncheck
-    await StorageService.saveSubtasks(items);
+    await StorageService.saveCheckboxItems(items);
     final completed = items.where((item) => item.isChecked).length;
     // Vary vibration based on how many items are checked
     if (completed >= 6) {
@@ -229,7 +238,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
       items[stakeIndex].subtasks[subtaskIndex].isCompleted =
           !items[stakeIndex].subtasks[subtaskIndex].isCompleted;
     });
-    await StorageService.saveSubtasks(items);
+    await StorageService.saveCheckboxItems(items);
     _playSound('assets/sounds/subtask_done.wav');
   }
 
@@ -274,7 +283,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
       items[stakeIndex].subtasks.add(Subtask(text));
     });
     await _playAddSubtaskSound();
-    await StorageService.saveSubtasks(items);
+    await StorageService.saveCheckboxItems(items);
   }
 
   // Update build method to show subtasks

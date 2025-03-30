@@ -25,7 +25,12 @@ class _StartScreenState extends State<StartScreen> {
   @override
   void initState() {
     super.initState();
-    musicPlayer.play('music/start_theme.mp3', volume: 0.8, resume: true);
+    musicPlayer.play(
+      'music/start_theme.mp3',
+      volume: 0.8,
+      resume: true,
+      loop: true,
+    );
   }
 
   // Labels for each stake level (available for future use if needed)

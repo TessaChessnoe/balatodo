@@ -12,7 +12,7 @@ class _WinScreenState extends State<WinScreen> {
   @override
   void initState() {
     super.initState();
-    musicPlayer.play('music/win_theme.wav', volume: 1.0);
+    musicPlayer.play('music/win_theme.wav', volume: 1.0, loop: false);
   }
 
   @override
@@ -69,7 +69,8 @@ class _WinScreenState extends State<WinScreen> {
                       await musicPlayer.play(
                         'music/main_theme.mp3',
                         volume: 0.8,
-                        resume: true, // resume from previous point if available
+                        resume: true,
+                        loop: true,
                       );
                       Navigator.pop(context);
                     },

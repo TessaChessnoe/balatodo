@@ -21,28 +21,26 @@ class MusicPlayer {
     String assetPath, {
     double volume = 1.0,
     bool resume = false,
+    bool loop = false,
   }) async {
-    // DEBUG CODE
-    if (debugAudio) print('🎵 play() called for: $assetPath (resume: $resume)');
+    if (debugAudio)
+      print('🎵 play() called for: $assetPath (resume: $resume, loop: $loop)');
 
-    // If played track is same as current, do nothing
     if (_currentTrack == assetPath && _player.state == PlayerState.playing) {
-      // DEBUG CODE
       if (debugAudio) print('🔁 Already playing $assetPath');
       return;
     }
-    _currentTrack = assetPath;
-    // Copy state to public variable for later reuse
 
+    _currentTrack = assetPath;
     _volume = volume;
     await _player.setVolume(volume);
+    // Set loop mode based on passed loop argument
+    await _player.setReleaseMode(loop ? ReleaseMode.loop : ReleaseMode.stop);
 
     int startMillis = 0;
     if (resume) {
       final prefs = await SharedPreferences.getInstance();
-      // Set new start time in ms if resuming music
       startMillis = prefs.getInt(_resumeKey(assetPath)) ?? 0;
-      // DEBUG CODE
       if (debugAudio) print('⏩ Resuming from $startMillis ms');
     }
 
