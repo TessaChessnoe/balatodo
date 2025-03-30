@@ -15,7 +15,10 @@ import 'start_screen.dart';
 // Import every required model ONCE, do not aggregate with ../models/
 import '../models/checkbox_item.dart';
 import '../models/subtask.dart';
-import '../models/pixel_art_config.dart';
+
+// Build context for row widgets
+import '../widgets/stake_tile.dart';
+import '../widgets/subtask_list.dart';
 
 class CheckboxScreen extends StatefulWidget {
   final int maxStakeIndex;
@@ -28,7 +31,6 @@ class CheckboxScreen extends StatefulWidget {
 class _CheckboxScreenState extends State<CheckboxScreen> {
   // Flag to enable reset for debugging
 
-  static const bool debugMode = true; // Set to false for testers
   final AudioPlayer _audioPlayer = AudioPlayer();
   // Removed lazy loading to prevent invalid vals before set state
   List<CheckboxItem> items = [];
@@ -343,111 +345,20 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
 
   Widget _buildStakeRow(int index, Color backgroundWhite) {
     final item = items[index];
-    final scale = item.customScale ?? PixelArtConfig.globalScale;
-    final displaySize = PixelArtConfig.basePixelSize * scale;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: backgroundWhite,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            // Stake header row
-            Row(
-              children: [
-                // Stake image
-                ClipRect(
-                  child: SizedBox(
-                    width: displaySize,
-                    height: displaySize,
-                    child: Image.asset(item.imagePath, fit: BoxFit.cover),
-                  ),
-                ),
-                const SizedBox(width: 12),
-
-                // Stake label
-                Expanded(
-                  child: Text(item.label, style: const TextStyle(fontSize: 18)),
-                ),
-
-                // Reset subtasks button for this stake
-                IconButton(
-                  icon: const Icon(Icons.restart_alt, color: Colors.blue),
-                  onPressed: () => _resetSubtasksForStake(index),
-                ),
-
-                // Main checkbox
-                Checkbox(
-                  value: item.isChecked,
-                  onChanged:
-                      _canCheckStake(index)
-                          ? (_) => _toggleCheckbox(index)
-                          : null,
-                ),
-              ],
-            ),
-
-            // Subtasks list
-            Column(
-              children: [
-                ...item.subtasks.map(
-                  (subtask) => GestureDetector(
-                    onLongPress: () async {
-                      // Play copy subtask sfx
-                      await SoundService.play('assets/sounds/subtask_copy.wav');
-                      await Clipboard.setData(
-                        ClipboardData(text: subtask.text),
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Copied "${subtask.text}" to clipboard',
-                          ),
-                          duration: const Duration(seconds: 1),
-                        ),
-                      );
-                    },
-                    child: ListTile(
-                      title: Text(
-                        subtask.text,
-                        style: TextStyle(
-                          fontSize: 16,
-                          decoration:
-                              subtask.isCompleted
-                                  ? TextDecoration.lineThrough
-                                  : null,
-                        ),
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed:
-                            () => _deleteSubtask(
-                              index,
-                              item.subtasks.indexOf(subtask),
-                            ),
-                      ),
-                      onTap:
-                          () => _toggleSubtask(
-                            index,
-                            item.subtasks.indexOf(subtask),
-                          ),
-                    ),
-                  ),
-                ),
-
-                // Add subtask button
-                TextButton(
-                  onPressed: () => _showAddSubtaskDialog(index),
-                  child: const Text('+ Add Subtask'),
-                ),
-              ],
-            ),
-          ],
-        ),
+    return StakeTile(
+      item: item,
+      index: index,
+      backgroundWhite: backgroundWhite,
+      onResetSubtasks: () async {
+        await SoundService.play('assets/sounds/subtask_reset.wav');
+        _resetSubtasksForStake(index);
+      },
+      onToggle: _canCheckStake(index) ? (_) => _toggleCheckbox(index) : null,
+      subtaskList: SubtaskList(
+        subtasks: item.subtasks,
+        onDelete: (subtaskIndex) => _deleteSubtask(index, subtaskIndex),
+        onToggle: (subtaskIndex) => _toggleSubtask(index, subtaskIndex),
+        onAdd: () => _showAddSubtaskDialog(index),
       ),
     );
   }
