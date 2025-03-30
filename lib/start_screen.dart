@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'music_player.dart';
 
 /// StartScreen is the initial screen where users select their maximum stake level
 /// before starting the game. It takes a callback function [onStart] that is called
@@ -13,8 +15,19 @@ class StartScreen extends StatefulWidget {
 }
 
 class _StartScreenState extends State<StartScreen> {
+  // Declare Audio player obj for tap sound effects
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  // Declare Music player obj for start screen music
+  final MusicPlayer _musicPlayer = MusicPlayer();
   // Start with white stake (index 0) selected by default
   int _selectedIndex = 0;
+
+  // Init start screen state with music
+  @override
+  void initState() {
+    super.initState();
+    _playSelectMusic();
+  }
 
   // Labels for each stake level (available for future use if needed)
   final List<String> stakeLabels = [
@@ -39,6 +52,22 @@ class _StartScreenState extends State<StartScreen> {
     'assets/images/orange-stake.png',
     'assets/images/gold-stake.png',
   ];
+
+  Future<void> _playSelectStakeSound() async {
+    await _audioPlayer.play(AssetSource('sounds/chip_click.wav'));
+  }
+
+  Future<void> _playSelectMusic() async {
+    await _musicPlayer.play('music/start_theme.mp3', volume: 0.8, resume: true);
+  }
+
+  Future<void> _pauseSelectMusic() async {
+    await _musicPlayer.stop(savePosition: true);
+  }
+
+  Future<void> _stopSelectMusic() async {
+    await _musicPlayer.stop(savePosition: false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +101,7 @@ class _StartScreenState extends State<StartScreen> {
 
                   return GestureDetector(
                     onTap: () {
+                      _playSelectStakeSound();
                       setState(() {
                         _selectedIndex = index; // Update selection when tapped
                       });
@@ -102,7 +132,10 @@ class _StartScreenState extends State<StartScreen> {
             const SizedBox(height: 20), // Spacer between grid and button
             // Start button - always enabled since we have a default selection
             ElevatedButton(
-              onPressed: () => widget.onStart(_selectedIndex),
+              onPressed: () {
+                _pauseSelectMusic();
+                widget.onStart(_selectedIndex);
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor:
                     Colors.green, // Green color for the action button

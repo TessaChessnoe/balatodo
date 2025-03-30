@@ -9,7 +9,8 @@ plugins {
 android {
     namespace = "com.example.temp"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // Minimum ndk for audioplayer package
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

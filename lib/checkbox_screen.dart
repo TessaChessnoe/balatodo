@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert'; // For JSON handling
+
 import 'win_screen.dart';
 import 'models.dart';
 import 'start_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert'; // For JSON handling
+import 'music_player.dart';
 
 class CheckboxScreen extends StatefulWidget {
   final int maxStakeIndex;
@@ -17,9 +19,10 @@ class CheckboxScreen extends StatefulWidget {
 
 class _CheckboxScreenState extends State<CheckboxScreen> {
   // Flag to enable reset for debugging
+
   static const bool debugMode = true; // Set to false for testers
   final AudioPlayer _audioPlayer = AudioPlayer();
-  final AudioPlayer _musicPlayer = AudioPlayer();
+  final MusicPlayer _musicPlayer = MusicPlayer();
   late final List<CheckboxItem> items;
 
   @override
@@ -38,11 +41,15 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
   }
 
   Future<void> _playMainMusic() async {
-    await _musicPlayer.play(AssetSource('sounds/main_theme.mp3'));
+    await _musicPlayer.play('music/main_theme.mp3', volume: 0.8, resume: true);
+  }
+
+  Future<void> _pauseMainMusic() async {
+    await _musicPlayer.stop(savePosition: true);
   }
 
   Future<void> _stopMainMusic() async {
-    await _musicPlayer.stop();
+    await _musicPlayer.stop(savePosition: false);
   }
 
   // Reset method for debugging
@@ -202,7 +209,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
           ),
         );
       }
-      await _stopMainMusic();
+      await _pauseMainMusic();
       if (mounted) {
         Navigator.push(
           context,
