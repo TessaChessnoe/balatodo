@@ -62,15 +62,11 @@ class _WinScreenState extends State<WinScreen> {
                   ),
                   const SizedBox(height: 40),
                   ElevatedButton(
-                    onPressed: () {
-                      // Do not await before popping!
-                      final navigator = Navigator.of(
-                        context,
-                      ); // capture context before async
-                      musicPlayer.stop().then((_) {
-                        musicPlayer.play('music/main_theme.mp3', volume: 0.8);
-                        navigator.pop(); // Safe now!
-                      });
+                    onPressed: () async {
+                      await musicPlayer.stop();
+                      if (mounted) {
+                        Navigator.pop(context);
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
