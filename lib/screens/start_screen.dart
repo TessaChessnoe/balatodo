@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 // To access global musicPlayer
-import 'main.dart';
+import '../main.dart';
 
 /// StartScreen is the initial screen where users select their maximum stake level
 /// before starting the game. It takes a callback function [onStart] that is called
@@ -19,9 +19,6 @@ class StartScreen extends StatefulWidget {
 class _StartScreenState extends State<StartScreen> {
   // Declare Audio player obj for tap sound effects
   final AudioPlayer _audioPlayer = AudioPlayer();
-  // Declare Music player obj for start screen music
-  //final MusicPlayer _musicPlayer = MusicPlayer();
-  // Start with white stake (index 0) selected by default
   int _selectedIndex = 0;
 
   // Init start screen state with music

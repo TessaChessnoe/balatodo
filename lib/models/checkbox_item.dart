@@ -1,7 +1,4 @@
-class PixelArtConfig {
-  static const double globalScale = 2.0; // Default scale for pixel art
-  static const double basePixelSize = 27.0;
-}
+import 'subtask.dart';
 
 class CheckboxItem {
   String label;
@@ -22,11 +19,4 @@ class CheckboxItem {
     DateTime? lastUpdated,
   }) : subtasks = subtasks ?? [],
        lastUpdated = lastUpdated ?? DateTime.now();
-}
-
-class Subtask {
-  String text;
-  bool isCompleted;
-
-  Subtask(this.text, {this.isCompleted = false});
 }

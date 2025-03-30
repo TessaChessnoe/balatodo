@@ -1,6 +1,8 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+const bool debugAudio = true;
+
 class MusicPlayer {
   // Final and _instance ensure only one singleton is created
   static final MusicPlayer _instance = MusicPlayer._internal();
@@ -19,6 +21,9 @@ class MusicPlayer {
     double volume = 1.0,
     bool resume = false,
   }) async {
+    // DEBUG CODE
+    if (debugAudio) print('🎵 play() called for: $assetPath (resume: $resume)');
+
     // If played track is same as current, do nothing
     if (_currentTrack == assetPath && _player.state == PlayerState.playing) {
       return;
@@ -43,6 +48,9 @@ class MusicPlayer {
 
   // Stops track and saves timestamp
   Future<void> pause() async {
+    //DEBUG CODE
+    if (debugAudio) print('⏸️ Pausing track: $_currentTrack');
+
     await _player.pause();
     if (_currentTrack != null) {
       final position = await _player.getCurrentPosition();
@@ -63,7 +71,11 @@ class MusicPlayer {
 
   /// Stops playback w/o storing timestamp
   Future<void> stop() async {
+    // DEBUG CODE
+    if (debugAudio) print('⏹️ Stopping track: $_currentTrack');
     await _player.stop();
+    // Clears name of currentTrack
+    _currentTrack = null;
   }
 
   /// Clean up resources

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'start_screen.dart';
-import 'checkbox_screen.dart';
+import 'screens/start_screen.dart';
+import 'screens/checkbox_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart'; // For date formatting
 
 // Required to declare musicPlayer singleton
-import 'music_player.dart';
+import 'core/music_player.dart';
 
 final MusicPlayer musicPlayer = MusicPlayer(); // global instance
 

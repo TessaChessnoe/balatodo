@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'main.dart';
+import '../main.dart';
 
 class WinScreen extends StatefulWidget {
   const WinScreen({super.key});
@@ -63,7 +63,7 @@ class _WinScreenState extends State<WinScreen> {
                   const SizedBox(height: 40),
                   ElevatedButton(
                     onPressed: () async {
-                      await musicPlayer.stop();
+                      await musicPlayer.pause();
                       if (mounted) {
                         Navigator.pop(context);
                       }
