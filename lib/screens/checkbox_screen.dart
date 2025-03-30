@@ -395,30 +395,47 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
             Column(
               children: [
                 ...item.subtasks.map(
-                  (subtask) => ListTile(
-                    title: Text(
-                      subtask.text,
-                      style: TextStyle(
-                        fontSize: 16,
-                        decoration:
-                            subtask.isCompleted
-                                ? TextDecoration.lineThrough
-                                : null,
+                  (subtask) => GestureDetector(
+                    onLongPress: () async {
+                      // Play copy subtask sfx
+                      await SoundService.play('assets/sounds/subtask_copy.wav');
+                      await Clipboard.setData(
+                        ClipboardData(text: subtask.text),
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Copied "${subtask.text}" to clipboard',
+                          ),
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                    child: ListTile(
+                      title: Text(
+                        subtask.text,
+                        style: TextStyle(
+                          fontSize: 16,
+                          decoration:
+                              subtask.isCompleted
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                        ),
                       ),
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed:
-                          () => _deleteSubtask(
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed:
+                            () => _deleteSubtask(
+                              index,
+                              item.subtasks.indexOf(subtask),
+                            ),
+                      ),
+                      onTap:
+                          () => _toggleSubtask(
                             index,
                             item.subtasks.indexOf(subtask),
                           ),
                     ),
-                    onTap:
-                        () => _toggleSubtask(
-                          index,
-                          item.subtasks.indexOf(subtask),
-                        ),
                   ),
                 ),
 
