@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../main.dart';
+// Allows us to set preferred screen when app is reopened
+import 'package:shared_preferences/shared_preferences.dart';
 
 class WinScreen extends StatefulWidget {
   const WinScreen({super.key});
@@ -65,6 +67,9 @@ class _WinScreenState extends State<WinScreen> {
                     onPressed: () async {
                       // Stop playing win theme
                       await musicPlayer.stop();
+                      // When app is reopened, go to start screen
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setBool('returnToStart', true);
                       // Play main theme upon returning to checklist
                       await musicPlayer.play(
                         'music/main_theme.mp3',

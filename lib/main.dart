@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'screens/start_screen.dart';
 import 'screens/checkbox_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:intl/intl.dart'; // For date formatting
 
 // Required to declare musicPlayer singleton
 import 'core/music_player.dart';
@@ -19,13 +18,6 @@ void main() {
       ),
     ),
   );
-}
-
-class RootApp extends StatefulWidget {
-  const RootApp({super.key});
-
-  @override
-  State<RootApp> createState() => _RootAppState();
 }
 
 // App state controller pushes different screens
@@ -45,40 +37,22 @@ class _RootAppState extends State<RootApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    musicPlayer.dispose(); // optional
+    musicPlayer.dispose();
     super.dispose();
   }
 
   Future<void> _initPrefs() async {
     _prefs = await SharedPreferences.getInstance();
-    _checkDailyReset();
-    _loadState();
-  }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      musicPlayer.pause(); // App goes to tray or lock screen
-    } else if (state == AppLifecycleState.resumed) {
-      musicPlayer.resume(); // App comes back
+    // If user manually chose to return to start, override saved index
+    final returnToStart = _prefs.getBool('returnToStart') ?? false;
+    if (returnToStart) {
+      await _prefs.setBool('returnToStart', false);
+      setState(() => _maxStakeIndex = null);
+      return;
     }
-  }
 
-  void _checkDailyReset() {
-    final now = DateTime.now();
-    final lastReset = _prefs.getString('lastResetDate');
-    final today = DateFormat('yyyy-MM-dd').format(now);
-
-    if (lastReset != today) {
-      _prefs.clear();
-      _prefs.setString('lastResetDate', today);
-      setState(() {
-        _maxStakeIndex = null;
-      });
-    }
-  }
-
-  void _loadState() {
+    // Load maxStakeIndex if it exists
     final savedIndex = _prefs.getInt('maxStakeIndex');
     if (savedIndex != null) {
       setState(() {
@@ -87,10 +61,24 @@ class _RootAppState extends State<RootApp> with WidgetsBindingObserver {
     }
   }
 
-  void _saveState(int index) {
-    _prefs.setInt('maxStakeIndex', index);
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // Pause music if exiting to tray or lock screen
+      musicPlayer.pause();
+    } else if (state == AppLifecycleState.resumed) {
+      // Resume music after re-entering app
+      musicPlayer.resume();
+    }
   }
 
+  void _saveState(int index) {
+    _prefs.setInt('maxStakeIndex', index);
+    // Clear return flag
+    _prefs.setBool('returnToStart', false);
+  }
+
+  // I DONT UNDERSTAND YET
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -109,4 +97,11 @@ class _RootAppState extends State<RootApp> with WidgetsBindingObserver {
               : CheckboxScreen(maxStakeIndex: _maxStakeIndex!),
     );
   }
+}
+
+class RootApp extends StatefulWidget {
+  const RootApp({super.key});
+
+  @override
+  State<RootApp> createState() => _RootAppState();
 }

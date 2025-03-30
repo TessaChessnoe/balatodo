@@ -74,7 +74,10 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
   // Reset method for debugging
   Future<void> _resetApp() async {
     final prefs = await SharedPreferences.getInstance();
+    // Return to start screen after resetting app state
+    await prefs.setBool('returnToStart', true); // set flag BEFORE clearing
     await prefs.clear(); // Clear all saved data
+
     if (mounted) {
       Navigator.pushAndRemoveUntil(
         context,
@@ -309,27 +312,28 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
                 ),
               ),
 
-              // Debug reset button (bottom center)
-              if (debugMode)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: Center(
-                    child: ElevatedButton(
-                      onPressed: _resetApp,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
+              // Return to stake widget
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: Center(
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      await _resetApp();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
                       ),
-                      child: const Text(
-                        'RESET TO STAKE SELECT',
-                        style: TextStyle(color: Colors.white),
-                      ),
+                    ),
+                    child: const Text(
+                      'RESET TO STAKE SELECT',
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
                 ),
+              ),
             ],
           ),
         ],
