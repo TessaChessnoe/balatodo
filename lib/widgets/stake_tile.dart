@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/checkbox_item.dart';
 import '../models/pixel_art_config.dart';
-//import 'subtask_list.dart';
 
 // This builds context for the stake tile for each checklist row
 class StakeTile extends StatelessWidget {
