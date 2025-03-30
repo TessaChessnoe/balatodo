@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -29,9 +28,6 @@ class CheckboxScreen extends StatefulWidget {
 }
 
 class _CheckboxScreenState extends State<CheckboxScreen> {
-  // Flag to enable reset for debugging
-
-  final AudioPlayer _audioPlayer = AudioPlayer();
   // Removed lazy loading to prevent invalid vals before set state
   List<CheckboxItem> items = [];
 
@@ -69,7 +65,6 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
 
   @override
   void dispose() {
-    _audioPlayer.dispose();
     super.dispose();
   }
 
