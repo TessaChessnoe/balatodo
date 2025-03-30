@@ -35,8 +35,15 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
   void initState() {
     super.initState();
     items = allItems.sublist(0, widget.maxStakeIndex + 1);
+
     _initializeSubtasks();
-    musicPlayer.play('music/main_theme.mp3', volume: 0.8, resume: true);
+
+    // Resume when it was the last track played
+    if (musicPlayer.currentTrack == 'music/main_theme.mp3') {
+      musicPlayer.resume();
+    } else {
+      musicPlayer.play('music/main_theme.mp3', volume: 0.8);
+    }
   }
 
   Future<void> _initializeSubtasks() async {
@@ -164,7 +171,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
   void _checkWinCondition() async {
     final allChecked = items.every((item) => item.isChecked);
     if (allChecked && mounted) {
-      await musicPlayer.stop(); // Ensure clean transition
+      await musicPlayer.pause(); // Ensure clean transition
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const WinScreen()),

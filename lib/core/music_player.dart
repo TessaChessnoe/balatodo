@@ -12,6 +12,7 @@ class MusicPlayer {
 
   final AudioPlayer _player = AudioPlayer();
   String? _currentTrack;
+  String? get currentTrack => _currentTrack;
   double _volume = 1.0;
 
   /// Plays a music track from assets at a given [volume].
@@ -26,10 +27,13 @@ class MusicPlayer {
 
     // If played track is same as current, do nothing
     if (_currentTrack == assetPath && _player.state == PlayerState.playing) {
+      // DEBUG CODE
+      if (debugAudio) print('🔁 Already playing $assetPath');
       return;
     }
     _currentTrack = assetPath;
     // Copy state to public variable for later reuse
+
     _volume = volume;
     await _player.setVolume(volume);
 
@@ -38,6 +42,8 @@ class MusicPlayer {
       final prefs = await SharedPreferences.getInstance();
       // Set new start time in ms if resuming music
       startMillis = prefs.getInt(_resumeKey(assetPath)) ?? 0;
+      // DEBUG CODE
+      if (debugAudio) print('⏩ Resuming from $startMillis ms');
     }
 
     await _player.play(

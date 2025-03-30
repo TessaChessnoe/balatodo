@@ -16,7 +16,7 @@ class _WinScreenState extends State<WinScreen> {
   }
 
   @override
-  void dispose() {
+  void dispose() async {
     // Allows user to skip fanfare by hitting 'back to stakes'
     super.dispose();
   }
@@ -63,10 +63,15 @@ class _WinScreenState extends State<WinScreen> {
                   const SizedBox(height: 40),
                   ElevatedButton(
                     onPressed: () async {
-                      await musicPlayer.pause();
-                      if (mounted) {
-                        Navigator.pop(context);
-                      }
+                      // Stop playing win theme
+                      await musicPlayer.stop();
+                      // Play main theme upon returning to checklist
+                      await musicPlayer.play(
+                        'music/main_theme.mp3',
+                        volume: 0.8,
+                        resume: true, // resume from previous point if available
+                      );
+                      Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
@@ -75,7 +80,7 @@ class _WinScreenState extends State<WinScreen> {
                         vertical: 16,
                       ),
                     ),
-                    child: const Text('Back to Stakes'),
+                    child: const Text('Back to Checklist'),
                   ),
                 ],
               ),
