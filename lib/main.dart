@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'screens/start_screen.dart';
 import 'screens/checkbox_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,7 +9,13 @@ import 'core/music_player.dart';
 
 final MusicPlayer musicPlayer = MusicPlayer(); // global instance
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Required before using SystemChrome
+  // Lock app orientation to portrait
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   runApp(
     Center(
       child: SizedBox(
