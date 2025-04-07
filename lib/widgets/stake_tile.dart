@@ -1,6 +1,54 @@
 import 'package:flutter/material.dart';
 import '../models/checkbox_item.dart';
 import '../models/pixel_art_config.dart';
+// For stake clipping mask
+import 'dart:math';
+
+/// Clips a circular image, removing a sector that represents the completed subtasks.
+class StakeClipper extends CustomClipper<Path> {
+  final double completionRatio; // Value between 0.0 and 1.0
+
+  StakeClipper(this.completionRatio);
+
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+
+    // Draw the full circle
+    path.addOval(Rect.fromCircle(center: center, radius: radius));
+
+    // Build a wedge path representing the completed portion
+    final wedge =
+        Path()
+          ..moveTo(center.dx, center.dy)
+          // Create arc
+          ..arcTo(
+            Rect.fromCircle(center: center, radius: radius),
+            // Start from top of circle
+            -pi / 2,
+            // Cutout section angle as ratio to full rotation
+            2 * pi * completionRatio,
+            // No need to move position since wedge angle is cumulative
+            false,
+          )
+          ..close();
+
+    // Subtract the wedge from the full circle to form the clipping mask
+    if (completionRatio != 1) {
+      return Path.combine(PathOperation.difference, path, wedge);
+      // If all subtasks complete, cut out 2pi radians (entire sprite)
+    } else {
+      return Path.combine(PathOperation.difference, wedge, path);
+    }
+  }
+
+  @override
+  bool shouldReclip(covariant StakeClipper oldClipper) {
+    return oldClipper.completionRatio != completionRatio;
+  }
+}
 
 // This builds context for the stake tile for each checklist row
 class StakeTile extends StatelessWidget {
@@ -26,6 +74,11 @@ class StakeTile extends StatelessWidget {
     final scale = item.customScale ?? PixelArtConfig.globalScale;
     final displaySize = PixelArtConfig.basePixelSize * scale;
 
+    // Must declare outside of widget tree
+    final completed = item.subtasks.where((s) => s.isCompleted).length;
+    final total = item.subtasks.length;
+    final ratio = (total == 0) ? 0.0 : completed / total;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Container(
@@ -38,7 +91,8 @@ class StakeTile extends StatelessWidget {
           children: [
             Row(
               children: [
-                ClipRect(
+                ClipPath(
+                  clipper: StakeClipper(ratio), // Proportional wedge cutout
                   child: SizedBox(
                     width: displaySize,
                     height: displaySize,

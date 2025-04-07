@@ -220,14 +220,29 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
         items[index].subtasks.every((subtask) => subtask.isCompleted);
   }
 
-  // Add these new methods for subtasks
   void _toggleSubtask(int stakeIndex, int subtaskIndex) async {
+    final subtask = items[stakeIndex].subtasks[subtaskIndex];
+    final wasCompleted = subtask.isCompleted;
+
+    // Toggle subtask completion state
     setState(() {
-      items[stakeIndex].subtasks[subtaskIndex].isCompleted =
-          !items[stakeIndex].subtasks[subtaskIndex].isCompleted;
+      subtask.isCompleted = !subtask.isCompleted;
     });
+
+    // Tracks all currently completed subtasks
+    final allNowCompleted = items[stakeIndex].subtasks.every(
+      (sub) => sub.isCompleted,
+    );
+
+    if (!wasCompleted && allNowCompleted) {
+      // Play crumble sound for last subtask in stake
+      await SoundService.play('assets/sounds/chip_crumble.wav');
+    } else {
+      // Normal cut sound plays
+      await SoundService.play('assets/sounds/chip_cut1.wav');
+    }
+
     await StorageService.saveCheckboxItems(items);
-    await SoundService.play('assets/sounds/subtask_done.wav');
   }
 
   void _showAddSubtaskDialog(int stakeIndex) {
@@ -237,10 +252,10 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Add Subtask'),
+            title: const Text('Add Task'),
             content: TextField(
               controller: controller,
-              decoration: const InputDecoration(hintText: 'Enter subtask'),
+              decoration: const InputDecoration(hintText: 'Enter task'),
             ),
             actions: [
               TextButton(
