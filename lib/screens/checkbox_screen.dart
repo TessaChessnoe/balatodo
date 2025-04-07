@@ -237,9 +237,22 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     if (!wasCompleted && allNowCompleted) {
       // Play crumble sound for last subtask in stake
       await SoundService.play('assets/sounds/chip_crumble.wav');
+      // Otherwise chip cut sounds play
     } else {
-      // Normal cut sound plays
-      await SoundService.play('assets/sounds/chip_cut1.wav');
+      // Concatenate absolute path so filenames can be used in pool
+      final baseDir = 'assets/sounds/';
+      List<String> soundPool = [
+        'chip_cut1.wav',
+        'chip_cut2.wav',
+        'chip_cut3.wav',
+        'chip_cut4.wav',
+        'cut1.wav',
+        'cut2.wav',
+        'cut3.wav',
+        'cut4.wav',
+      ];
+      soundPool = soundPool.map((filename) => "$baseDir$filename").toList();
+      await SoundService.playRandom(soundPool);
     }
 
     await StorageService.saveCheckboxItems(items);
