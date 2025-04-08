@@ -54,7 +54,7 @@ class SubtaskList extends StatelessWidget {
             ),
           );
         }),
-        TextButton(onPressed: onAdd, child: const Text('+ Add Subtask')),
+        TextButton(onPressed: onAdd, child: const Text('+ Add Task')),
       ],
     );
   }

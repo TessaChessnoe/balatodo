@@ -3,6 +3,8 @@ import '../main.dart';
 // Allows us to set preferred screen when app is reopened
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../widgets/mute_button.dart';
+
 class WinScreen extends StatefulWidget {
   const WinScreen({super.key});
 
@@ -62,31 +64,44 @@ class _WinScreenState extends State<WinScreen> {
                     'You finished everything!',
                     style: TextStyle(color: Colors.white, fontSize: 24),
                   ),
-                  const SizedBox(height: 40),
-                  ElevatedButton(
-                    onPressed: () async {
-                      // Stop playing win theme
-                      await musicPlayer.stop();
-                      // When app is reopened, go to start screen
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setBool('returnToStart', true);
-                      // Play main theme upon returning to checklist
-                      await musicPlayer.play(
-                        'music/main_theme.mp3',
-                        volume: 0.8,
-                        resume: true,
-                        loop: true,
-                      );
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 40,
-                        vertical: 16,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 40),
+                      // Return to checklist button
+                      ElevatedButton(
+                        onPressed: () async {
+                          // Stop playing win theme
+                          await musicPlayer.stop();
+                          // When app is reopened, go to start screen
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setBool('returnToStart', true);
+                          // Play main theme upon returning to checklist
+                          await musicPlayer.play(
+                            'music/main_theme.mp3',
+                            volume: 0.8,
+                            resume: true,
+                            loop: true,
+                          );
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 40,
+                            vertical: 16,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.arrow_back_rounded,
+                          color: Colors.white,
+                          size: 45,
+                        ),
                       ),
-                    ),
-                    child: const Text('Back to Checklist'),
+                      // Mute button
+                      const MuteButton(alignEnd: true),
+                    ],
                   ),
                 ],
               ),

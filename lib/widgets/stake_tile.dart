@@ -78,6 +78,7 @@ class StakeTile extends StatelessWidget {
     final completed = item.subtasks.where((s) => s.isCompleted).length;
     final total = item.subtasks.length;
     final ratio = (total == 0) ? 0.0 : completed / total;
+    bool isTotalZero = (total == 0);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -104,8 +105,13 @@ class StakeTile extends StatelessWidget {
                   child: Text(item.label, style: const TextStyle(fontSize: 18)),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.restart_alt, color: Colors.blue),
-                  onPressed: onResetSubtasks,
+                  icon: Icon(
+                    Icons.restart_alt,
+                    color: isTotalZero ? Colors.grey : Colors.blue,
+                  ),
+                  // Disable reset button when there are no tasks to reset
+                  onPressed:
+                      (isTotalZero || total < 0) ? null : onResetSubtasks,
                 ),
                 Checkbox(value: item.isChecked, onChanged: onToggle),
               ],

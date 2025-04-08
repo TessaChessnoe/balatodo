@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:temp/widgets/mute_button.dart';
 // To access global musicPlayer
 import '../main.dart';
 // To access sound service
@@ -58,82 +59,210 @@ class _StartScreenState extends State<StartScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Dark background for better contrast
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Title text explaining what the user should do
-            const Text(
-              'Choose your max stake',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 30), // Spacer between title and stake grid
-            // The main content - a grid of stake options
-            Expanded(
-              child: GridView.count(
-                crossAxisCount: 4, // Creates a grid with 4 columns
-                crossAxisSpacing: 16, // Horizontal space between items
-                mainAxisSpacing: 16, // Vertical space between items
-                children: List.generate(stakeImages.length, (index) {
-                  // Determine if this stake is currently selected
-                  final isSelected = index == _selectedIndex;
+      //       backgroundColor: Colors.black, // Dark background for better contrast
+      //       body:
+      //         Center(
+      //           mainAxisSize: MainAxisSize.min, // ⬅️ Only take up what's needed
+      //           mainAxisAlignment: MainAxisAlignment.center,
+      //           child: Column(
+      //             crossAxisAlignment: CrossAxisAlignment.center,
+      //             children: [
+      //               // Title text explaining what the user should do
+      //               const Text(
+      //                 'Select highest stake for your list.',
+      //                 style: TextStyle(
+      //                   color: Colors.white,
+      //                   fontSize: 24,
+      //                   fontWeight: FontWeight.bold,
+      //                 ),
+      //                 textAlign: TextAlign.center,
+      //               ),
+      //               const SizedBox(height: 30), // Spacer between title and stake grid
+      //               // The main content - a grid of stake options
+      //               Expanded(
+      //                 child: GridView.count(
+      //                   crossAxisCount: 4, // Creates a grid with 4 columns
+      //                   crossAxisSpacing: 16, // Horizontal space between items
+      //                   mainAxisSpacing: 16, // Vertical space between items
+      //                   children: List.generate(stakeImages.length, (index) {
+      //                     // Determine if this stake is currently selected
+      //                     final isSelected = index == _selectedIndex;
 
-                  return GestureDetector(
-                    onTap: () async {
-                      await SoundService.play('assets/sounds/chip_click.wav');
-                      setState(() {
-                        _selectedIndex = index; // Update selection when tapped
-                      });
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        // Add white border for selected stake only
-                        border:
-                            isSelected
-                                ? Border.all(color: Colors.white, width: 3)
-                                : null,
+      //                     return GestureDetector(
+      //                       onTap: () async {
+      //                         await SoundService.play('assets/sounds/chip_click.wav');
+      //                         setState(() {
+      //                           _selectedIndex = index; // Update selection when tapped
+      //                         });
+      //                       },
+      //                       child: Container(
+      //                         decoration: BoxDecoration(
+      //                           shape: BoxShape.circle,
+      //                           // Add white border for selected stake only
+      //                           border:
+      //                               isSelected
+      //                                   ? Border.all(color: Colors.white, width: 3)
+      //                                   : null,
+      //                         ),
+      //                         child: Padding(
+      //                           padding: const EdgeInsets.all(8.0),
+      //                           // Show stake image in full color with no filters
+      //                           child: Image.asset(
+      //                             stakeImages[index],
+      //                             fit: BoxFit.contain,
+      //                           ),
+      //                         ),
+      //                       ),
+      //                     );
+      //                   }),
+      //                 ),
+      //               ),
+      //             ],
+      //           ),
+      //         ),
+      //             Row(
+      //               // Space start and music toggle buttons evenly
+      //               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      //               crossAxisAlignment: CrossAxisAlignment.center,
+      //               children: [
+      //                 const SizedBox(height: 20), // Spacer between grid and button
+      //                 // Start button - always enabled since we have a default selection
+      //                 ElevatedButton(
+      //                   onPressed: () {
+      //                     musicPlayer.pause();
+      //                     widget.onStart(_selectedIndex);
+      //                   },
+      //                   style: ElevatedButton.styleFrom(
+      //                     backgroundColor:
+      //                         Colors.green, // Green color for the action button
+      //                     padding: const EdgeInsets.symmetric(
+      //                       horizontal: 40,
+      //                       vertical: 16,
+      //                     ),
+      //                   ),
+      //                   child: const Icon(
+      //                     Icons.start_rounded,
+      //                     color: Colors.white,
+      //                     size: 45,
+      //                   ),
+      //                 ),
+      //                 MuteButton(),
+      //               ],
+      //             ),
+      //           ],
+      //         ),
+      //       ),
+      //     );
+      //   }
+      // }
+      body: Stack(
+        children: [
+          // 1. Background image
+          Positioned.fill(
+            child: FittedBox(
+              fit: BoxFit.cover,
+              child: Image.asset('assets/images/background.jpg'),
+            ),
+          ),
+
+          // 2. Foreground UI (layout column)
+          Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Spacer(flex: 2),
+
+              // 3. Centered Text + Grid
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Select highest stake for your list.',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        // Show stake image in full color with no filters
-                        child: Image.asset(
-                          stakeImages[index],
-                          fit: BoxFit.contain,
-                        ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      height: 280,
+                      width: MediaQuery.of(context).size.width * 0.85,
+                      child: GridView.count(
+                        crossAxisCount: 4,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: List.generate(stakeImages.length, (index) {
+                          final isSelected = index == _selectedIndex;
+                          return GestureDetector(
+                            onTap: () async {
+                              await SoundService.play(
+                                'assets/sounds/chip_click.wav',
+                              );
+                              setState(() => _selectedIndex = index);
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border:
+                                    isSelected
+                                        ? Border.all(
+                                          color: Colors.white,
+                                          width: 3,
+                                        )
+                                        : null,
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Image.asset(
+                                  stakeImages[index],
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
                       ),
                     ),
-                  );
-                }),
-              ),
-            ),
-
-            const SizedBox(height: 20), // Spacer between grid and button
-            // Start button - always enabled since we have a default selection
-            ElevatedButton(
-              onPressed: () {
-                musicPlayer.pause();
-                widget.onStart(_selectedIndex);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    Colors.green, // Green color for the action button
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 40,
-                  vertical: 16,
+                  ],
                 ),
               ),
-              child: const Text('Start', style: TextStyle(fontSize: 18)),
-            ),
-          ], // Children
-        ),
+
+              const Spacer(flex: 1),
+
+              // 4. Start + Mute Buttons
+              Padding(
+                padding: const EdgeInsets.only(bottom: 30),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        musicPlayer.pause();
+                        widget.onStart(_selectedIndex);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 40,
+                          vertical: 16,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.start_rounded,
+                        color: Colors.white,
+                        size: 45,
+                      ),
+                    ),
+                    const MuteButton(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

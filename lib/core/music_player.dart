@@ -14,9 +14,29 @@ class MusicPlayer {
   String? _currentTrack;
   String? get currentTrack => _currentTrack;
   double _volume = 0.8;
+  bool isMuted = false;
 
-  /// Plays a music track from assets at a given [volume].
-  /// Set [resume] to true to continue from where it left off last time.
+  // Expose setVolume to other files thru new method
+  Future<void> setVolume(double volume) async {
+    _volume = volume;
+    await _player.setVolume(isMuted ? 0.0 : volume);
+    if (debugAudio) {
+      print(
+        '🔊 setVolume called: effective volume = ${isMuted ? 0.0 : volume}',
+      );
+    }
+  }
+
+  Future<void> updateMute(bool mute) async {
+    isMuted = mute;
+    await _player.setVolume(isMuted ? 0.0 : _volume);
+    if (debugAudio) {
+      print('🔇 isMuted = $isMuted, volume = ${isMuted ? 0.0 : _volume}');
+    }
+  }
+
+  /// Plays a music track from assets at a given volume.
+  /// Set resume to true to continue from where it left off last time.
   Future<void> play(
     String assetPath, {
     double volume = 1.0,
@@ -32,8 +52,7 @@ class MusicPlayer {
     }
 
     _currentTrack = assetPath;
-    _volume = volume;
-    await _player.setVolume(volume);
+    await setVolume(volume);
     // Set loop mode based on passed loop argument
     await _player.setReleaseMode(loop ? ReleaseMode.loop : ReleaseMode.stop);
 
@@ -68,7 +87,10 @@ class MusicPlayer {
 
   // Resumes from key stored in pause
   Future<void> resume() async {
+    double volume = _volume;
     if (_currentTrack != null) {
+      // Re-apply the last known volume
+      await setVolume(volume);
       await _player.resume();
     }
   }

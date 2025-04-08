@@ -17,6 +17,7 @@ import '../models/subtask.dart';
 // Build context for row widgets
 import '../widgets/stake_tile.dart';
 import '../widgets/subtask_list.dart';
+import '../widgets/mute_button.dart';
 
 // Used for importing tasks from text file
 import 'package:file_picker/file_picker.dart';
@@ -548,6 +549,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
                 padding: const EdgeInsets.only(bottom: 20),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     // DELETE ALL button
                     ElevatedButton(
@@ -637,6 +639,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
                         size: 45,
                       ),
                     ),
+                    const MuteButton(alignEnd: true),
                   ], // Row children
                 ),
               ),
