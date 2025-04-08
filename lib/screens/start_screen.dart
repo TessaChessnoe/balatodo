@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:temp/widgets/mute_button.dart';
+import '/widgets/mute_button.dart';
 // To access global musicPlayer
 import '../main.dart';
 // To access sound service
