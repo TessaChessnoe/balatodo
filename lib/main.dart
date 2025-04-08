@@ -10,7 +10,9 @@ import 'core/music_player.dart';
 final MusicPlayer musicPlayer = MusicPlayer(); // global instance
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Required before using SystemChrome
+  // Must initialize to use SystemChrome
+  WidgetsFlutterBinding.ensureInitialized();
+  await musicPlayer.init();
   // Lock app orientation to portrait
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

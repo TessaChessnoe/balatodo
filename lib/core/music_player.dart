@@ -28,6 +28,13 @@ class MusicPlayer {
   double _volume = 0.8;
   bool isMuted = false;
 
+  Future<void> init() async {
+    final prefs = await SharedPreferences.getInstance();
+    isMuted = prefs.getBool('musicMuted') ?? false;
+    // Setting volume also applies mute state
+    await setVolume(_volume);
+  }
+
   // Expose setVolume to other files thru new method
   Future<void> setVolume(double volume) async {
     _volume = volume;
@@ -40,11 +47,11 @@ class MusicPlayer {
   }
 
   Future<void> updateMute(bool mute) async {
+    // Pass in mute state from arg
     isMuted = mute;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('musicMuted', mute);
     await _player.setVolume(isMuted ? 0.0 : _volume);
-    if (debugAudio) {
-      print('🔇 isMuted = $isMuted, volume = ${isMuted ? 0.0 : _volume}');
-    }
   }
 
   /// Plays a music track from assets at a given volume.

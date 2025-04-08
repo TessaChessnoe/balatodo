@@ -430,42 +430,52 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     CheckboxItem(
       label: 'White Stake',
       soundPath: 'assets/sounds/mult1.wav',
-      imagePath: 'assets/images/white-stake.png',
+      imageVariants: ['assets/images/white-stake10X.png'],
     ),
     CheckboxItem(
       label: 'Red Stake',
       soundPath: 'assets/sounds/mult2.wav',
-      imagePath: 'assets/images/red-stake.png',
+      imageVariants: ['assets/images/red-stake10X.png'],
     ),
     CheckboxItem(
       label: 'Green Stake',
       soundPath: 'assets/sounds/mult3.wav',
-      imagePath: 'assets/images/green-stake.png',
+      imageVariants: ['assets/images/green-stake10X.png'],
     ),
     CheckboxItem(
       label: 'Black Stake',
       soundPath: 'assets/sounds/xmult1.wav',
-      imagePath: 'assets/images/black-stake.png',
+      imageVariants: ['assets/images/black-stake10X.png'],
     ),
     CheckboxItem(
       label: 'Blue Stake',
       soundPath: 'assets/sounds/xmult2.wav',
-      imagePath: 'assets/images/blue-stake.png',
+      imageVariants: ['assets/images/blue-stake10X.png'],
     ),
     CheckboxItem(
       label: 'Purple Stake',
       soundPath: 'assets/sounds/xmult3.wav',
-      imagePath: 'assets/images/purple-stake.png',
+      imageVariants: ['assets/images/purple-stake10X.png'],
     ),
     CheckboxItem(
       label: 'Orange Stake',
       soundPath: 'assets/sounds/xmult4.wav',
-      imagePath: 'assets/images/orange-stake.png',
+      imageVariants: ['assets/images/orange-stake10X.png'],
     ),
     CheckboxItem(
       label: 'Gold Stake',
       soundPath: 'assets/sounds/final-mult.wav',
-      imagePath: 'assets/images/gold-stake.png',
+      imageVariants: [
+        'assets/images/gold-stake10X.png',
+        'assets/images/variants/trans_stake10X.png',
+        'assets/images/variants/blahaj_stake10X.png',
+        'assets/images/variants/estrogen_stake10X.png',
+        'assets/images/variants/trans_flag_stake10X.png',
+        'assets/images/variants/trans_venus_stake10X.png',
+        'assets/images/variants/progress_stake10X.png',
+        'assets/images/variants/omni_stake10X.png',
+        'assets/images/variants/stakevincible10X.png',
+      ],
     ),
   ];
 

@@ -92,12 +92,25 @@ class StakeTile extends StatelessWidget {
           children: [
             Row(
               children: [
-                ClipPath(
-                  clipper: StakeClipper(ratio), // Proportional wedge cutout
-                  child: SizedBox(
-                    width: displaySize,
-                    height: displaySize,
-                    child: Image.asset(item.imagePath, fit: BoxFit.cover),
+                GestureDetector(
+                  // Cycle through stake variants when tapping on gold stake
+                  onTap: () {
+                    if (item.label == 'Gold Stake') {
+                      item.imageIndex =
+                          (item.imageIndex + 1) % item.imageVariants.length;
+                      (context as Element).markNeedsBuild(); // Force rebuild
+                    }
+                  },
+                  child: ClipPath(
+                    clipper: StakeClipper(ratio),
+                    child: SizedBox(
+                      width: displaySize,
+                      height: displaySize,
+                      child: Image.asset(
+                        item.imageVariants[item.imageIndex],
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),

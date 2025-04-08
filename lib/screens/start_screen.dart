@@ -46,14 +46,14 @@ class _StartScreenState extends State<StartScreen> {
 
   // Image paths for each stake level's visual representation
   final List<String> stakeImages = [
-    'assets/images/white-stake.png',
-    'assets/images/red-stake.png',
-    'assets/images/green-stake.png',
-    'assets/images/black-stake.png',
-    'assets/images/blue-stake.png',
-    'assets/images/purple-stake.png',
-    'assets/images/orange-stake.png',
-    'assets/images/gold-stake.png',
+    'assets/images/white-stake10X.png',
+    'assets/images/red-stake10X.png',
+    'assets/images/green-stake10X.png',
+    'assets/images/black-stake10X.png',
+    'assets/images/blue-stake10X.png',
+    'assets/images/purple-stake10X.png',
+    'assets/images/orange-stake10X.png',
+    'assets/images/gold-stake10X.png',
   ];
 
   @override

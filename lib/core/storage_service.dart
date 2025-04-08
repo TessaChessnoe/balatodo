@@ -17,7 +17,7 @@ class StorageService {
             'label': item.label,
             'isChecked': item.isChecked,
             'soundPath': item.soundPath,
-            'imagePath': item.imagePath,
+            'imageVariants': item.imageVariants,
             'customScale': item.customScale,
             'lastUpdated': item.lastUpdated.toIso8601String(),
             'subtasks':
@@ -40,7 +40,7 @@ class StorageService {
         label: json['label'],
         isChecked: json['isChecked'],
         soundPath: json['soundPath'],
-        imagePath: json['imagePath'],
+        imageVariants: json['imageVariants'],
         customScale: json['customScale'],
         lastUpdated:
             DateTime.tryParse(json['lastUpdated'] ?? '') ?? DateTime.now(),

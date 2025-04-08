@@ -34,6 +34,7 @@ flutter:
   assets:
       # Chip & BG image assets
       - assets/images/
+      - assets/images/variants/
       - assets/sounds/
       - assets/icons/
       - assets/music/

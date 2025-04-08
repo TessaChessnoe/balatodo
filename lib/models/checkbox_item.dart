@@ -4,7 +4,9 @@ class CheckboxItem {
   String label;
   bool isChecked;
   final String soundPath;
-  final String imagePath;
+  final List<String> imageVariants;
+  // Tracks current stake variant
+  int imageIndex;
   final double? customScale;
   List<Subtask> subtasks;
   DateTime lastUpdated;
@@ -12,9 +14,10 @@ class CheckboxItem {
   CheckboxItem({
     required this.label,
     required this.soundPath,
-    required this.imagePath,
+    required this.imageVariants,
     this.customScale,
     this.isChecked = false,
+    this.imageIndex = 0,
     List<Subtask>? subtasks,
     DateTime? lastUpdated,
   }) : subtasks = subtasks ?? [],
