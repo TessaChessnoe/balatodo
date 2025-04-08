@@ -657,8 +657,33 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
       index: index,
       backgroundWhite: backgroundWhite,
       onResetSubtasks: () async {
-        await SoundService.play('assets/sounds/subtask_reset_LOUD.wav');
-        _resetSubtasksForStake(index);
+        final confirmed = await showDialog<bool>(
+          // Use context from stakeTile to build dialog overlay
+          context: context,
+          // Pass builder by reference
+          // we dont want dialog widget to be built at runtime
+          builder:
+              (context) => AlertDialog(
+                title: const Text('Reset Subtasks for Stake'),
+                content: const Text(
+                  'Are you sure you want to reset all subtasks for this stake?',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text("Cancel"),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text("RESET Tasks for Stake"),
+                  ),
+                ],
+              ),
+        );
+        if (confirmed == true) {
+          _resetSubtasksForStake(index);
+          SoundService.play('assets/sounds/subtask_reset_LOUD.wav');
+        }
       },
       onToggle: _canCheckStake(index) ? (_) => _toggleCheckbox(index) : null,
       subtaskList: SubtaskList(
