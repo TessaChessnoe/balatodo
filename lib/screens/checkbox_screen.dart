@@ -401,6 +401,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
+                    // DELETE ALL button
                     ElevatedButton(
                       onPressed: () async {
                         final confirm = await showDialog<bool>(
@@ -430,18 +431,27 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
                           await _resetApp();
                         }
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                      ),
-                      child: const Text(
-                        'RESET TASKS',
+                      // Removed label to simplify UI
+                      /*label: const Text(
+                        'DELETE ALL TASKS',
                         style: TextStyle(color: Colors.white),
+                      ),*/
+                      style: ElevatedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          // For somewhat rounded square
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        backgroundColor: Colors.red,
+                        // Tighten padding since labels have been removed
+                        padding: const EdgeInsets.all(20),
+                      ),
+                      child: const Icon(
+                        Icons.delete_forever_sharp,
+                        color: Colors.white,
+                        size: 45,
                       ),
                     ),
+                    // Import task from file button
                     ElevatedButton(
                       onPressed: () async {
                         print("📁 Import button pressed");
@@ -489,16 +499,23 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
                           }
                         }
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                      ),
-                      child: const Text(
-                        'IMPORT TASKS',
+                      // Removed label to simplify UI
+                      /*label: const Text(
+                        'Import .TXT',
                         style: TextStyle(color: Colors.white),
+                      ),*/
+                      style: ElevatedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          // For somewhat rounded square
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        backgroundColor: Colors.green,
+                        padding: const EdgeInsets.all(20),
+                      ),
+                      child: const Icon(
+                        Icons.upload_file,
+                        color: Colors.white,
+                        size: 45,
                       ),
                     ),
                   ], // Row children
