@@ -45,6 +45,7 @@ class _RootAppState extends State<RootApp> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     musicPlayer.dispose();
+
     super.dispose();
   }
 

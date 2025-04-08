@@ -22,6 +22,11 @@ import '../widgets/subtask_list.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 
+// Required to export tasks to file
+import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart';
+import 'package:share_plus/share_plus.dart';
+
 class CheckboxScreen extends StatefulWidget {
   final int maxStakeIndex;
   const CheckboxScreen({super.key, required this.maxStakeIndex});
@@ -100,6 +105,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     }
   }
 
+  // Import/Export Tasks
   Future<void> _resetSubtasksForStake(int stakeIndex) async {
     setState(() {
       items[stakeIndex].subtasks.clear();
@@ -108,46 +114,176 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     await StorageService.saveCheckboxItems(items);
   }
 
-  Future<List<CheckboxItem>> importTasksFromText(
+  Future<List<CheckboxItem>> _parseTasksFromText(
     String rawText,
     List<CheckboxItem> items,
   ) async {
-    print("📥 Starting task import...");
     final lines = rawText.split('\n');
     int? currentStakeIndex;
 
+    // DEBUG CODE: verify parse func is running
+    print("📥 Parsing text with ${lines.length} lines");
+
     for (final line in lines) {
       final trimmed = line.trim();
-      print("🔍 Processing line: '$trimmed'");
 
-      // Detect stake markers like <1>, <2>, etc.
-      if (trimmed.startsWith('<') && trimmed.endsWith('>')) {
-        final numStr = trimmed.substring(1, trimmed.length - 1);
-        final parsed = int.tryParse(numStr);
+      // Parse stake headers like <1> [x] or <2>
+      if (trimmed.startsWith('<') && trimmed.contains('>')) {
+        final angleBracketContent = trimmed.substring(1, trimmed.indexOf('>'));
+        final index = int.tryParse(angleBracketContent);
+        final isChecked = trimmed.contains('[x]');
 
-        if (parsed == null) {
-          print("❌ Skipping invalid stake tag: <$numStr>");
-          currentStakeIndex = null;
-        } else if (parsed < 1 || parsed > items.length) {
-          print("⚠️ Stake <$parsed> out of range. Ignoring.");
-          currentStakeIndex = null;
+        if (index != null && index > 0 && index <= items.length) {
+          print("➡️ Found stake header: $trimmed");
+          currentStakeIndex = index - 1;
+          items[currentStakeIndex].isChecked = isChecked;
         } else {
-          currentStakeIndex = parsed - 1; // Adjust for 0-based indexing
-          print(
-            "✅ Switched to stake index $currentStakeIndex (${items[currentStakeIndex].label})",
+          currentStakeIndex = null;
+        }
+
+        // Parse subtasks like "Take out trash [x]"
+      } else if (trimmed.isNotEmpty && currentStakeIndex != null) {
+        print("📝 Found subtask: $trimmed");
+        final isDone = trimmed.endsWith('[x]');
+        final cleanText = trimmed.replaceAll(RegExp(r'\s*\[.\]$'), '').trim();
+
+        items[currentStakeIndex].subtasks.add(
+          Subtask(cleanText, isCompleted: isDone),
+        );
+      }
+    }
+    return items;
+  }
+
+  Future<void> importTasksFromFile(
+    BuildContext context,
+    List<CheckboxItem> items,
+    void Function(List<CheckboxItem>) updateItemsCallback,
+  ) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['txt'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final path = result.files.single.path!;
+        print("📄 Selected file path: $path");
+
+        final content = await File(path).readAsString();
+        // DEBUG CODE
+        print("📄 File content:\n$content");
+
+        // Clear all existing subtasks
+        _clearAllSubtasks();
+
+        // Parse new subtasks from text
+        final updatedItems = await _parseTasksFromText(content, items);
+
+        // Update app state
+        updateItemsCallback(updatedItems);
+        await StorageService.saveCheckboxItems(updatedItems);
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('✅ Tasks imported successfully')),
           );
         }
-      } else if (trimmed.isNotEmpty && currentStakeIndex != null) {
-        // Add a subtask to the current stake
-        items[currentStakeIndex].subtasks.add(Subtask(trimmed));
-        print("➕ Added subtask to stake $currentStakeIndex: '$trimmed'");
-      } else if (trimmed.isNotEmpty) {
-        print("⚠️ Skipping orphan task (no active stake): '$trimmed'");
+      } else {
+        print("⚠️ No file selected or path was null.");
+      }
+    } catch (e) {
+      print("❌ Import failed: $e");
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('❌ Failed to import tasks: $e')));
+      }
+    }
+  }
+
+  // Generates summary of checklist data when sharing using supported apps
+  String _generateExportMetadata(List<CheckboxItem> items) {
+    final now = DateTime.now();
+    final completedStakes = items.where((i) => i.isChecked).length;
+    final totalStakes = items.length;
+    String _twoDigits(int n) => n.toString().padLeft(2, '0');
+
+    int completedTasks = 0;
+    int totalTasks = 0;
+    for (final item in items) {
+      for (final subtask in item.subtasks) {
+        totalTasks++;
+        if (subtask.isCompleted) completedTasks++;
       }
     }
 
-    print("✅ Finished importing tasks.");
-    return items;
+    final timestamp =
+        "${_twoDigits(now.month)}/${_twoDigits(now.day)}/${now.year} @ "
+        "${_twoDigits(now.hour)}:${_twoDigits(now.minute)}";
+
+    return '''
+  Checklist Export – $timestamp
+  ✔️ $completedStakes of $totalStakes stakes completed
+  📋 $totalTasks subtasks total
+  ✅ $completedTasks subtasks completed
+  '''.trim();
+  }
+
+  Future<void> exportTasksToFile(List<CheckboxItem> items) async {
+    final buffer = StringBuffer();
+    for (int index = 0; index < items.length; index++) {
+      final item = items[index];
+      // Write index in angle brackets with [x] if stake is checked
+      buffer.writeln('<${index + 1}> ${item.isChecked ? "[x]" : "[ ]"}');
+      for (final subtask in item.subtasks) {
+        // Write task text with [x] for checked subtasks
+        buffer.writeln(
+          '${subtask.text} ${subtask.isCompleted ? "[x]" : "[ ]"}',
+        );
+      }
+    }
+    final exportText = buffer.toString();
+
+    try {
+      // Get app-safe directory
+      final dir = await getApplicationDocumentsDirectory();
+
+      final now = DateTime.now();
+      // Helper method for date formatting
+      String _twoDigits(int n) => n.toString().padLeft(2, '0');
+      final timestamp =
+          '${now.year}-${_twoDigits(now.month)}-${_twoDigits(now.day)}_${_twoDigits(now.hour)}-${_twoDigits(now.minute)}';
+
+      // Include date & time in exported filename
+      final filename = 'checklist_export_$timestamp.txt';
+      final path = '${dir.path}/$filename';
+      final file = File(path);
+
+      // Write to internal storage
+      await file.writeAsString(exportText);
+      print("✅ Tasks exported to: $path");
+
+      final summary = _generateExportMetadata(items);
+      // Share if on Android
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        // Open Android's 'share to' menu
+        await Share.shareXFiles([XFile(path)], text: summary);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('✅ Tasks exported to: $path')));
+        }
+      }
+    } catch (e) {
+      print("❌ Export failed: $e");
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('❌ Export failed: $e')));
+      }
+    }
   }
 
   // SUBTASK MANAGEMENT
@@ -266,6 +402,18 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
             ],
           ),
     );
+  }
+
+  Future<void> _clearAllSubtasks() async {
+    setState(() {
+      // Clear and uncheck all items
+      for (var item in items) {
+        item.subtasks.clear();
+        item.isChecked = false;
+      }
+    });
+    // Save empty items list in shared prefs
+    await StorageService.saveCheckboxItems(items);
   }
 
   // Checklist Logic
@@ -395,7 +543,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
                 ),
               ),
 
-              // Return to stake widget
+              // Button Tray for: Delete tasks, Import & Export
               Padding(
                 padding: const EdgeInsets.only(bottom: 20),
                 child: Row(
@@ -408,7 +556,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
                           context: context,
                           builder:
                               (context) => AlertDialog(
-                                title: const Text('Reset App'),
+                                title: const Text('DELETE ALL TASKS'),
                                 content: const Text(
                                   'This will reset all progress and return to stake selection. Continue?',
                                 ),
@@ -421,21 +569,17 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
                                   TextButton(
                                     onPressed:
                                         () => Navigator.pop(context, true),
-                                    child: const Text('RESET'),
+                                    child: const Text('DELETE'),
                                   ),
                                 ],
                               ),
                         );
-                        // Only runs if 'RESET' is pressed
+                        // Only runs if 'DELETE' is pressed
                         if (confirm == true) {
+                          _clearAllSubtasks();
                           await _resetApp();
                         }
                       },
-                      // Removed label to simplify UI
-                      /*label: const Text(
-                        'DELETE ALL TASKS',
-                        style: TextStyle(color: Colors.white),
-                      ),*/
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(
                           // For somewhat rounded square
@@ -451,62 +595,17 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
                         size: 45,
                       ),
                     ),
+
                     // Import task from file button
                     ElevatedButton(
                       onPressed: () async {
                         print("📁 Import button pressed");
-                        final result = await FilePicker.platform.pickFiles(
-                          type: FileType.custom,
-                          allowedExtensions: ['txt'],
-                        );
-                        // Read file contents
-                        if (result != null &&
-                            result.files.single.path != null) {
-                          // Content must be declared in same scope as updatedItems
-                          String content = '';
-                          try {
-                            final path = result.files.single.path!;
-                            print("📄 Selected file path: $path");
-                            final content = await File(path).readAsString();
-                            // Clear existing subtasks before importing
-                            for (var item in items) {
-                              item.subtasks.clear();
-                            }
-                            // Update checklist items with contents from imported file
-                            final updatedItems = await importTasksFromText(
-                              content,
-                              items,
-                            );
-                            // Update checklist with new tasks
-                            setState(() => items = updatedItems);
-                            // Save loaded tasks in persistent storage
-                            await StorageService.saveCheckboxItems(items);
-                            // Pop-up message for SUCCESSFUL import
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Tasks imported successfully.'),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                            // Pop-up message for FAILED import
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Failed to import tasks: $e'),
-                                duration: const Duration(seconds: 15),
-                              ),
-                            );
-                          }
-                        }
+                        await importTasksFromFile(context, items, (updated) {
+                          setState(() => items = updated);
+                        });
                       },
-                      // Removed label to simplify UI
-                      /*label: const Text(
-                        'Import .TXT',
-                        style: TextStyle(color: Colors.white),
-                      ),*/
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(
-                          // For somewhat rounded square
                           borderRadius: BorderRadius.circular(4),
                         ),
                         backgroundColor: Colors.green,
@@ -514,6 +613,26 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
                       ),
                       child: const Icon(
                         Icons.upload_file,
+                        color: Colors.white,
+                        size: 45,
+                      ),
+                    ),
+                    // Export tasks button
+                    ElevatedButton(
+                      onPressed: () {
+                        print("📁 Export button pressed");
+                        exportTasksToFile(items);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          // For somewhat rounded square
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        backgroundColor: Colors.blue,
+                        padding: const EdgeInsets.all(20),
+                      ),
+                      child: const Icon(
+                        Icons.download,
                         color: Colors.white,
                         size: 45,
                       ),
