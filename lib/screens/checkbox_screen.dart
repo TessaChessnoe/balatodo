@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // To access global musicPlayer
@@ -21,6 +20,7 @@ import '../widgets/subtask_list.dart';
 
 // Used for importing tasks from text file
 import 'package:file_picker/file_picker.dart';
+import 'dart:io';
 
 class CheckboxScreen extends StatefulWidget {
   final int maxStakeIndex;
@@ -112,20 +112,41 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     String rawText,
     List<CheckboxItem> items,
   ) async {
+    print("📥 Starting task import...");
     final lines = rawText.split('\n');
     int? currentStakeIndex;
 
-    // Trim whitespaces and add each line as a subtask
     for (final line in lines) {
       final trimmed = line.trim();
+      print("🔍 Processing line: '$trimmed'");
+
+      // Detect stake markers like <1>, <2>, etc.
       if (trimmed.startsWith('<') && trimmed.endsWith('>')) {
-        // Get stake number from inside angle brackets
         final numStr = trimmed.substring(1, trimmed.length - 1);
-        currentStakeIndex = int.tryParse(numStr)! - 1;
+        final parsed = int.tryParse(numStr);
+
+        if (parsed == null) {
+          print("❌ Skipping invalid stake tag: <$numStr>");
+          currentStakeIndex = null;
+        } else if (parsed < 1 || parsed > items.length) {
+          print("⚠️ Stake <$parsed> out of range. Ignoring.");
+          currentStakeIndex = null;
+        } else {
+          currentStakeIndex = parsed - 1; // Adjust for 0-based indexing
+          print(
+            "✅ Switched to stake index $currentStakeIndex (${items[currentStakeIndex].label})",
+          );
+        }
       } else if (trimmed.isNotEmpty && currentStakeIndex != null) {
+        // Add a subtask to the current stake
         items[currentStakeIndex].subtasks.add(Subtask(trimmed));
+        print("➕ Added subtask to stake $currentStakeIndex: '$trimmed'");
+      } else if (trimmed.isNotEmpty) {
+        print("⚠️ Skipping orphan task (no active stake): '$trimmed'");
       }
     }
+
+    print("✅ Finished importing tasks.");
     return items;
   }
 
@@ -417,27 +438,55 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
                         ),
                       ),
                       child: const Text(
-                        'RESET ALL STAKES & TASKS',
+                        'RESET TASKS',
                         style: TextStyle(color: Colors.white),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () async {
+                        print("📁 Import button pressed");
                         final result = await FilePicker.platform.pickFiles(
                           type: FileType.custom,
                           allowedExtensions: ['txt'],
                         );
+                        // Read file contents
                         if (result != null &&
-                            result.files.single.bytes != null) {
-                          final content = String.fromCharCodes(
-                            result.files.single.bytes!,
-                          );
-                          final updatedItems = await importTasksFromText(
-                            content,
-                            items,
-                          );
-                          setState(() => items = updatedItems);
-                          await StorageService.saveCheckboxItems(items);
+                            result.files.single.path != null) {
+                          // Content must be declared in same scope as updatedItems
+                          String content = '';
+                          try {
+                            final path = result.files.single.path!;
+                            print("📄 Selected file path: $path");
+                            final content = await File(path).readAsString();
+                            // Clear existing subtasks before importing
+                            for (var item in items) {
+                              item.subtasks.clear();
+                            }
+                            // Update checklist items with contents from imported file
+                            final updatedItems = await importTasksFromText(
+                              content,
+                              items,
+                            );
+                            // Update checklist with new tasks
+                            setState(() => items = updatedItems);
+                            // Save loaded tasks in persistent storage
+                            await StorageService.saveCheckboxItems(items);
+                            // Pop-up message for SUCCESSFUL import
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Tasks imported successfully.'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                            // Pop-up message for FAILED import
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to import tasks: $e'),
+                                duration: const Duration(seconds: 15),
+                              ),
+                            );
+                          }
                         }
                       },
                       style: ElevatedButton.styleFrom(
