@@ -10,7 +10,19 @@ class MusicPlayer {
   factory MusicPlayer() => _instance;
   MusicPlayer._internal(); // Private named constructor
 
-  final AudioPlayer _player = AudioPlayer();
+  // Give music player unique ID so AudioContext is not shared with sfx
+  final AudioPlayer _player = AudioPlayer(playerId: 'music')..setAudioContext(
+    AudioContext(
+      android: AudioContextAndroid(
+        isSpeakerphoneOn: false,
+        stayAwake: true,
+        contentType: AndroidContentType.music,
+        usageType: AndroidUsageType.media,
+        audioFocus: AndroidAudioFocus.gain,
+      ),
+    ),
+  );
+
   String? _currentTrack;
   String? get currentTrack => _currentTrack;
   double _volume = 0.8;

@@ -2,7 +2,19 @@ import 'package:audioplayers/audioplayers.dart';
 import 'dart:math';
 
 class SoundService {
-  static final AudioPlayer _player = AudioPlayer();
+  // Give sfx player unique ID so AudioContext is not shared with global mus player
+  static final AudioPlayer _player = AudioPlayer(playerId: 'sfx')
+    ..setAudioContext(
+      AudioContext(
+        android: AudioContextAndroid(
+          isSpeakerphoneOn: true,
+          stayAwake: false,
+          contentType: AndroidContentType.music,
+          usageType: AndroidUsageType.game,
+          audioFocus: AndroidAudioFocus.none,
+        ),
+      ),
+    );
 
   /// Plays a short sound effect (like taps, chips, etc.).
   /// Defaults to 60% volume unless overridden.
