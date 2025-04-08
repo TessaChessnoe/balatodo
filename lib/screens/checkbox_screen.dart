@@ -19,6 +19,9 @@ import '../models/subtask.dart';
 import '../widgets/stake_tile.dart';
 import '../widgets/subtask_list.dart';
 
+// Used for importing tasks from text file
+import 'package:file_picker/file_picker.dart';
+
 class CheckboxScreen extends StatefulWidget {
   final int maxStakeIndex;
   const CheckboxScreen({super.key, required this.maxStakeIndex});
@@ -105,119 +108,71 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     await StorageService.saveCheckboxItems(items);
   }
 
+  Future<List<CheckboxItem>> importTasksFromText(
+    String rawText,
+    List<CheckboxItem> items,
+  ) async {
+    final lines = rawText.split('\n');
+    int? currentStakeIndex;
+
+    // Trim whitespaces and add each line as a subtask
+    for (final line in lines) {
+      final trimmed = line.trim();
+      if (trimmed.startsWith('<') && trimmed.endsWith('>')) {
+        // Get stake number from inside angle brackets
+        final numStr = trimmed.substring(1, trimmed.length - 1);
+        currentStakeIndex = int.tryParse(numStr)! - 1;
+      } else if (trimmed.isNotEmpty && currentStakeIndex != null) {
+        items[currentStakeIndex].subtasks.add(Subtask(trimmed));
+      }
+    }
+    return items;
+  }
+
   // SUBTASK MANAGEMENT
+  void _addSubtask(int stakeIndex, String text) async {
+    if (text.trim().isEmpty) return;
+
+    setState(() {
+      items[stakeIndex].subtasks.add(Subtask(text));
+    });
+    await SoundService.play('assets/sounds/subtask_add.wav');
+    await StorageService.saveCheckboxItems(items);
+  }
+
   void _deleteSubtask(int stakeIndex, int subtaskIndex) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Task'),
+            content: const Text('Are you sure you want to delete this task?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('DELETE'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirm != true) return;
+
     setState(() {
       items[stakeIndex].subtasks.removeAt(subtaskIndex);
-      // Uncheck stake if it was checked
+      // Uncheck stake if a subtask is removed
       if (items[stakeIndex].isChecked) {
         items[stakeIndex].isChecked = false;
         _cascadeUncheck(stakeIndex);
       }
     });
+
     await SoundService.play('assets/sounds/subtask_remove.wav');
     await StorageService.saveCheckboxItems(items);
-  }
-
-  void _cascadeUncheck(int fromIndex) {
-    setState(() {
-      for (int i = fromIndex; i < items.length; i++) {
-        items[i].isChecked = false;
-      }
-    });
-  }
-
-  final List<CheckboxItem> allItems = [
-    CheckboxItem(
-      label: 'White Stake',
-      soundPath: 'assets/sounds/mult1.wav',
-      imagePath: 'assets/images/white-stake.png',
-    ),
-    CheckboxItem(
-      label: 'Red Stake',
-      soundPath: 'assets/sounds/mult2.wav',
-      imagePath: 'assets/images/red-stake.png',
-    ),
-    CheckboxItem(
-      label: 'Green Stake',
-      soundPath: 'assets/sounds/mult3.wav',
-      imagePath: 'assets/images/green-stake.png',
-    ),
-    CheckboxItem(
-      label: 'Black Stake',
-      soundPath: 'assets/sounds/xmult1.wav',
-      imagePath: 'assets/images/black-stake.png',
-    ),
-    CheckboxItem(
-      label: 'Blue Stake',
-      soundPath: 'assets/sounds/xmult2.wav',
-      imagePath: 'assets/images/blue-stake.png',
-    ),
-    CheckboxItem(
-      label: 'Purple Stake',
-      soundPath: 'assets/sounds/xmult3.wav',
-      imagePath: 'assets/images/purple-stake.png',
-    ),
-    CheckboxItem(
-      label: 'Orange Stake',
-      soundPath: 'assets/sounds/xmult4.wav',
-      imagePath: 'assets/images/orange-stake.png',
-    ),
-    CheckboxItem(
-      label: 'Gold Stake',
-      soundPath: 'assets/sounds/final-mult.wav',
-      imagePath: 'assets/images/gold-stake.png',
-    ),
-  ];
-
-  void _checkWinCondition() async {
-    final allChecked = items.every((item) => item.isChecked);
-    if (allChecked && mounted) {
-      await musicPlayer.pause(); // Ensure clean transition
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const WinScreen()),
-      );
-    }
-  }
-
-  void _toggleCheckbox(int index) async {
-    if (!_canCheckStake(index)) return;
-    setState(() {
-      // If unchecking, cascade uncheck all higher stakes
-      if (items[index].isChecked) {
-        _cascadeUncheck(index);
-      } else {
-        items[index].isChecked = true;
-      }
-    });
-    // Only play sound if item is being checked
-    if (items[index].isChecked) {
-      await SoundService.play(items[index].soundPath);
-      _checkWinCondition();
-    } else {
-      await HapticFeedback.selectionClick();
-    } // Gentle vibration on uncheck
-    await StorageService.saveCheckboxItems(items);
-    final completed = items.where((item) => item.isChecked).length;
-    // Vary vibration based on how many items are checked
-    if (completed >= 6) {
-      await HapticFeedback.heavyImpact(); // Strong feedback
-    } else if (completed >= 3) {
-      await HapticFeedback.mediumImpact(); // Medium feedback
-    } else {
-      await HapticFeedback.lightImpact(); // Light feedback
-    }
-  }
-
-  bool _canCheckStake(int index) {
-    // Check previous stakes
-    for (int i = 0; i < index; i++) {
-      if (!items[i].isChecked) return false;
-    }
-    // Check subtasks
-    return items[index].subtasks.isEmpty ||
-        items[index].subtasks.every((subtask) => subtask.isCompleted);
   }
 
   void _toggleSubtask(int stakeIndex, int subtaskIndex) async {
@@ -292,14 +247,96 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     );
   }
 
-  void _addSubtask(int stakeIndex, String text) async {
-    if (text.trim().isEmpty) return;
-
+  // Checklist Logic
+  void _cascadeUncheck(int fromIndex) {
     setState(() {
-      items[stakeIndex].subtasks.add(Subtask(text));
+      for (int i = fromIndex; i < items.length; i++) {
+        items[i].isChecked = false;
+      }
     });
-    await SoundService.play('assets/sounds/subtask_add.wav');
+  }
+
+  final List<CheckboxItem> allItems = [
+    CheckboxItem(
+      label: 'White Stake',
+      soundPath: 'assets/sounds/mult1.wav',
+      imagePath: 'assets/images/white-stake.png',
+    ),
+    CheckboxItem(
+      label: 'Red Stake',
+      soundPath: 'assets/sounds/mult2.wav',
+      imagePath: 'assets/images/red-stake.png',
+    ),
+    CheckboxItem(
+      label: 'Green Stake',
+      soundPath: 'assets/sounds/mult3.wav',
+      imagePath: 'assets/images/green-stake.png',
+    ),
+    CheckboxItem(
+      label: 'Black Stake',
+      soundPath: 'assets/sounds/xmult1.wav',
+      imagePath: 'assets/images/black-stake.png',
+    ),
+    CheckboxItem(
+      label: 'Blue Stake',
+      soundPath: 'assets/sounds/xmult2.wav',
+      imagePath: 'assets/images/blue-stake.png',
+    ),
+    CheckboxItem(
+      label: 'Purple Stake',
+      soundPath: 'assets/sounds/xmult3.wav',
+      imagePath: 'assets/images/purple-stake.png',
+    ),
+    CheckboxItem(
+      label: 'Orange Stake',
+      soundPath: 'assets/sounds/xmult4.wav',
+      imagePath: 'assets/images/orange-stake.png',
+    ),
+    CheckboxItem(
+      label: 'Gold Stake',
+      soundPath: 'assets/sounds/final-mult.wav',
+      imagePath: 'assets/images/gold-stake.png',
+    ),
+  ];
+
+  void _toggleCheckbox(int index) async {
+    if (!_canCheckStake(index)) return;
+    setState(() {
+      // If unchecking, cascade uncheck all higher stakes
+      if (items[index].isChecked) {
+        _cascadeUncheck(index);
+      } else {
+        items[index].isChecked = true;
+      }
+    });
+    // Only play sound if item is being checked
+    if (items[index].isChecked) {
+      await SoundService.play(items[index].soundPath);
+      _checkWinCondition();
+    }
     await StorageService.saveCheckboxItems(items);
+  }
+
+  bool _canCheckStake(int index) {
+    // Check previous stakes
+    for (int i = 0; i < index; i++) {
+      if (!items[i].isChecked) return false;
+    }
+    // Check subtasks
+    return items[index].subtasks.isEmpty ||
+        items[index].subtasks.every((subtask) => subtask.isCompleted);
+  }
+
+  // Navigate to win screen
+  void _checkWinCondition() async {
+    final allChecked = items.every((item) => item.isChecked);
+    if (allChecked && mounted) {
+      await musicPlayer.pause(); // Ensure clean transition
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const WinScreen()),
+      );
+    }
   }
 
   // Update build method to show subtasks
@@ -340,23 +377,82 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
               // Return to stake widget
               Padding(
                 padding: const EdgeInsets.only(bottom: 20),
-                child: Center(
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      await _resetApp();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder:
+                              (context) => AlertDialog(
+                                title: const Text('Reset App'),
+                                content: const Text(
+                                  'This will reset all progress and return to stake selection. Continue?',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed:
+                                        () => Navigator.pop(context, false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed:
+                                        () => Navigator.pop(context, true),
+                                    child: const Text('RESET'),
+                                  ),
+                                ],
+                              ),
+                        );
+                        // Only runs if 'RESET' is pressed
+                        if (confirm == true) {
+                          await _resetApp();
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: const Text(
+                        'RESET ALL STAKES & TASKS',
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
-                    child: const Text(
-                      'RESET TO STAKE SELECT',
-                      style: TextStyle(color: Colors.white),
+                    ElevatedButton(
+                      onPressed: () async {
+                        final result = await FilePicker.platform.pickFiles(
+                          type: FileType.custom,
+                          allowedExtensions: ['txt'],
+                        );
+                        if (result != null &&
+                            result.files.single.bytes != null) {
+                          final content = String.fromCharCodes(
+                            result.files.single.bytes!,
+                          );
+                          final updatedItems = await importTasksFromText(
+                            content,
+                            items,
+                          );
+                          setState(() => items = updatedItems);
+                          await StorageService.saveCheckboxItems(items);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: const Text(
+                        'IMPORT TASKS',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
-                  ),
+                  ], // Row children
                 ),
               ),
             ],
@@ -373,7 +469,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
       index: index,
       backgroundWhite: backgroundWhite,
       onResetSubtasks: () async {
-        await SoundService.play('assets/sounds/subtask_reset.wav');
+        await SoundService.play('assets/sounds/subtask_reset_LOUD.wav');
         _resetSubtasksForStake(index);
       },
       onToggle: _canCheckStake(index) ? (_) => _toggleCheckbox(index) : null,
