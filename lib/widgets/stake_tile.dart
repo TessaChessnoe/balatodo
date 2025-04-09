@@ -108,12 +108,10 @@ class StakeTile extends StatelessWidget {
                 GestureDetector(
                   // Cycle through stake variants when tapping on gold stake
                   onTap: () {
-                    if (item.label == 'Gold Stake') {
-                      item.imageIndex =
-                          (item.imageIndex + 1) % item.imageVariants.length;
-                      (context as Element).markNeedsBuild(); // Force rebuild
-                      onVariantChange?.call(); // Trigger var change sound
-                    }
+                    item.imageIndex =
+                        (item.imageIndex + 1) % item.imageVariants.length;
+                    (context as Element).markNeedsBuild(); // Force rebuild
+                    onVariantChange?.call(); // Trigger var change sound
                   },
                   child: ClipPath(
                     clipper: StakeClipper(ratio),

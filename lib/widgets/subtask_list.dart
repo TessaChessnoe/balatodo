@@ -20,6 +20,8 @@ class SubtaskList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Constraint for subtask count
+    final bool isDisabled = subtasks.length >= 20;
     return Column(
       children: [
         ...subtasks.asMap().entries.map((entry) {
@@ -27,7 +29,7 @@ class SubtaskList extends StatelessWidget {
           final subtask = entry.value;
 
           return GestureDetector(
-            onLongPress: () async {
+            onDoubleTap: () async {
               await SoundService.play('assets/sounds/subtask_copy.wav');
               await Clipboard.setData(ClipboardData(text: subtask.text));
               ScaffoldMessenger.of(context).showSnackBar(
@@ -54,7 +56,13 @@ class SubtaskList extends StatelessWidget {
             ),
           );
         }),
-        TextButton(onPressed: onAdd, child: const Text('+ Add Task')),
+        TextButton(
+          onPressed: isDisabled ? null : onAdd,
+          child: Text(
+            '+ Add Task',
+            style: TextStyle(color: isDisabled ? Colors.grey : Colors.blue),
+          ),
+        ),
       ],
     );
   }
