@@ -30,7 +30,6 @@ class _WinScreenState extends State<WinScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
-        // <-- This is the key change - using Stack instead of direct children
         children: [
           // Background image (same as main screen)
           Positioned.fill(

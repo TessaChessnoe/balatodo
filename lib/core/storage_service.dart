@@ -18,6 +18,7 @@ class StorageService {
             'isChecked': item.isChecked,
             'soundPath': item.soundPath,
             'imageVariants': item.imageVariants,
+            'imageIndex': item.imageIndex,
             'customScale': item.customScale,
             'lastUpdated': item.lastUpdated.toIso8601String(),
             'subtasks':
@@ -37,11 +38,14 @@ class StorageService {
     final List decoded = jsonDecode(raw);
     return decoded.map<CheckboxItem>((json) {
       return CheckboxItem(
+        // Load key values from json file
         label: json['label'],
         isChecked: json['isChecked'],
         soundPath: json['soundPath'],
         imageVariants: json['imageVariants'],
+        imageIndex: json['imageIndex'],
         customScale: json['customScale'],
+
         lastUpdated:
             DateTime.tryParse(json['lastUpdated'] ?? '') ?? DateTime.now(),
         subtasks:

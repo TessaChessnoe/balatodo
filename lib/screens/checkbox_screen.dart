@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // To access global musicPlayer
@@ -287,10 +288,9 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     }
   }
 
-  // SUBTASK MANAGEMENT
+  // Subtask management
   void _addSubtask(int stakeIndex, String text) async {
     if (text.trim().isEmpty) return;
-
     setState(() {
       items[stakeIndex].subtasks.add(Subtask(text));
     });
@@ -382,6 +382,9 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
             content: TextField(
               controller: controller,
               decoration: const InputDecoration(hintText: 'Enter task'),
+              // Prevent user from typing in task title field after char limit
+              maxLength: 60,
+              maxLengthEnforcement: MaxLengthEnforcement.enforced,
             ),
             actions: [
               TextButton(
@@ -390,9 +393,35 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
               ),
               TextButton(
                 onPressed: () async {
+                  // Verify that task label is not empty and does not contain characters reserved for import
+                  final text = controller.text.trim();
+                  final disallowed = RegExp(r'[<>[\]]');
+                  if (text.isEmpty || disallowed.hasMatch(text)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          '❌ Task cannot be empty or contain < > [ ]',
+                        ),
+                        backgroundColor: Colors.red,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
+                  if (text.length > 60) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          '⚠️ Task name is too long (max 60 characters)',
+                        ),
+                        backgroundColor: Colors.orange,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
                   if (controller.text.trim().isNotEmpty) {
                     _addSubtask(stakeIndex, controller.text);
-                    await SoundService.play('assets/sounds/subtask_add.wav');
                   }
                   if (mounted) {
                     Navigator.pop(context);
@@ -415,6 +444,47 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     });
     // Save empty items list in shared prefs
     await StorageService.saveCheckboxItems(items);
+  }
+
+  // Stake management
+  void _addStake() async {
+    if (items.length >= allItems.length) return; // max reached
+
+    setState(() {
+      items.add(allItems[items.length]);
+    });
+
+    await StorageService.saveCheckboxItems(items);
+    await SoundService.play('assets/sounds/subtask_add.wav');
+  }
+
+  Future<void> _removeStake() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Remove Stake'),
+            content: const Text(
+              'Are you sure you want to remove this stake and all its tasks?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Remove'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => items.removeLast());
+    await StorageService.saveCheckboxItems(items);
+    await SoundService.play('assets/sounds/subtask_remove.wav');
   }
 
   // Checklist Logic
@@ -553,7 +623,27 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
                   },
                 ),
               ),
-
+              // Add Stake Button - centered below stake list
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Center(
+                  child: ElevatedButton(
+                    onPressed: _addStake,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.pink,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.add_circle_outline,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                ),
+              ),
               // Button Tray for: Delete tasks, Import & Export
               Padding(
                 padding: const EdgeInsets.only(bottom: 20),
@@ -665,6 +755,8 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     return StakeTile(
       item: item,
       index: index,
+      // Disable stake removal if not last stake OR it is the only stake
+      canRemoveStake: index > 0 && index == items.length - 1,
       backgroundWhite: backgroundWhite,
       onResetSubtasks: () async {
         final confirmed = await showDialog<bool>(
@@ -694,6 +786,18 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
           _resetSubtasksForStake(index);
           SoundService.play('assets/sounds/subtask_reset_LOUD.wav');
         }
+      },
+
+      // Use remove helper function in callback
+      onRemoveStake: () {
+        if (index == items.length - 1) {
+          _removeStake();
+        }
+      },
+
+      onVariantChange: () async {
+        await SoundService.play('assets/sounds/card_flip.wav');
+        await StorageService.saveCheckboxItems(items); // Save variant index
       },
       onToggle: _canCheckStake(index) ? (_) => _toggleCheckbox(index) : null,
       subtaskList: SubtaskList(

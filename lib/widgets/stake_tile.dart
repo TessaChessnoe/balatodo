@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/checkbox_item.dart';
 import '../models/pixel_art_config.dart';
-// For stake clipping mask
+// Required to create stake clipping mask
 import 'dart:math';
 
 /// Clips a circular image, removing a sector that represents the completed subtasks.
@@ -14,7 +14,8 @@ class StakeClipper extends CustomClipper<Path> {
   Path getClip(Size size) {
     final path = Path();
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
+    final edge_padding = 20;
+    final radius = (size.width / 2) + edge_padding;
 
     // Draw the full circle
     path.addOval(Rect.fromCircle(center: center, radius: radius));
@@ -58,6 +59,12 @@ class StakeTile extends StatelessWidget {
   final VoidCallback onResetSubtasks;
   final ValueChanged<bool?>? onToggle;
   final Widget subtaskList;
+  final bool canRemoveStake;
+
+  // Call back to parent widget for access to SoundServices
+  final VoidCallback onRemoveStake;
+  // Option parameter for stakes with variants
+  final VoidCallback? onVariantChange;
 
   const StakeTile({
     super.key,
@@ -67,6 +74,9 @@ class StakeTile extends StatelessWidget {
     required this.onResetSubtasks,
     required this.onToggle,
     required this.subtaskList,
+    required this.onRemoveStake,
+    required this.canRemoveStake,
+    this.onVariantChange,
   });
 
   @override
@@ -91,7 +101,10 @@ class StakeTile extends StatelessWidget {
         child: Column(
           children: [
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
+                // GD and onTap are needed for interactions with non-button elems
+                // No visual feedback by default (good for now)
                 GestureDetector(
                   // Cycle through stake variants when tapping on gold stake
                   onTap: () {
@@ -99,6 +112,7 @@ class StakeTile extends StatelessWidget {
                       item.imageIndex =
                           (item.imageIndex + 1) % item.imageVariants.length;
                       (context as Element).markNeedsBuild(); // Force rebuild
+                      onVariantChange?.call(); // Trigger var change sound
                     }
                   },
                   child: ClipPath(
@@ -116,6 +130,14 @@ class StakeTile extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(item.label, style: const TextStyle(fontSize: 18)),
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.remove_circle_outline,
+                    color: canRemoveStake ? Colors.orange : Colors.grey,
+                  ),
+                  // Only enable remove stake button for last stake
+                  onPressed: canRemoveStake ? onRemoveStake : null,
                 ),
                 IconButton(
                   icon: Icon(

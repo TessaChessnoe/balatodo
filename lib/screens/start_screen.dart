@@ -65,7 +65,7 @@ class _StartScreenState extends State<StartScreen> {
           Positioned.fill(
             child: FittedBox(
               fit: BoxFit.cover,
-              child: Image.asset('assets/images/background.jpg'),
+              child: Image.asset('assets/images/start_background.png'),
             ),
           ),
 

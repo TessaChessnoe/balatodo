@@ -13,12 +13,13 @@ class MuteButton extends StatefulWidget {
 class _MuteButtonState extends State<MuteButton> {
   bool isMuted = musicPlayer.isMuted;
 
-  void _toggleMute() {
+  void _toggleMute() async {
     setState(() {
       isMuted = !isMuted;
       musicPlayer.isMuted = isMuted;
       musicPlayer.setVolume(isMuted ? 0.0 : 1.0);
     });
+    await musicPlayer.updateMute(isMuted); // ✅ saves + sets volume
   }
 
   @override

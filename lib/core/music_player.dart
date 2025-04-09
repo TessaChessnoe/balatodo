@@ -30,6 +30,7 @@ class MusicPlayer {
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
+    // Load mute button state from shared prefs
     isMuted = prefs.getBool('musicMuted') ?? false;
     // Setting volume also applies mute state
     await setVolume(_volume);
