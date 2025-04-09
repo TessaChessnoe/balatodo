@@ -4,9 +4,15 @@ import '/widgets/mute_button.dart';
 import '../main.dart';
 // To access sound service
 import '../core/sound_service.dart';
+// Required to load stake variant images
+import 'package:shared_preferences/shared_preferences.dart';
+// Used for loading key from checkbox items json
+import 'dart:convert';
+//Shared access to stake data
+import '../core/stake_data.dart';
 
 /// StartScreen is the initial screen where users select their maximum stake level
-/// before starting the game. It takes a callback function [onStart] that is called
+/// before starting the game. It takes a callback function onStart that is called
 /// with the selected stake index when the user presses the Start button.
 class StartScreen extends StatefulWidget {
   final void Function(int maxStakeIndex) onStart;
@@ -24,12 +30,28 @@ class _StartScreenState extends State<StartScreen> {
   @override
   void initState() {
     super.initState();
+    // Display last used variant for each stake
+    _loadVariantIndexes();
     musicPlayer.play(
       'music/start_theme.mp3',
       volume: 0.8,
       resume: true,
       loop: true,
     );
+  }
+
+  Future<void> _loadVariantIndexes() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rawJson = prefs.getString('checkbox_items');
+    if (rawJson == null) return;
+
+    final List<dynamic> decoded = jsonDecode(rawJson);
+    setState(() {
+      variantIndexes =
+          decoded.map<int>((json) {
+            return json['imageIndex'] ?? 0;
+          }).toList();
+    });
   }
 
   // Labels for each stake level (available for future use if needed)
@@ -56,6 +78,9 @@ class _StartScreenState extends State<StartScreen> {
     'assets/images/gold-stake10X.png',
   ];
 
+  // Initialize variant list for loading
+  List<int> variantIndexes = List.filled(8, 0);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,7 +106,7 @@ class _StartScreenState extends State<StartScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
-                      'Select highest stake for your list.',
+                      'Select highest stake to create your to-do list.',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 24,
@@ -121,7 +146,10 @@ class _StartScreenState extends State<StartScreen> {
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Image.asset(
-                                  stakeImages[index],
+                                  index < variantIndexes.length
+                                      ? stakeTemplates[index]
+                                          .imageVariants[variantIndexes[index]]
+                                      : stakeImages[index], // fallback to default
                                   fit: BoxFit.contain,
                                 ),
                               ),
