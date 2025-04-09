@@ -42,7 +42,7 @@ class _StartScreenState extends State<StartScreen> {
 
   Future<void> _loadVariantIndexes() async {
     final prefs = await SharedPreferences.getInstance();
-    final rawJson = prefs.getString('checkbox_items');
+    final rawJson = prefs.getString('variant_indexes');
     if (rawJson == null) return;
 
     final List<dynamic> decoded = jsonDecode(rawJson);

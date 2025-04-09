@@ -42,7 +42,8 @@ class StorageService {
         label: json['label'],
         isChecked: json['isChecked'],
         soundPath: json['soundPath'],
-        imageVariants: json['imageVariants'],
+        // Must convert from dynamic to string for mapping
+        imageVariants: List<String>.from(json['imageVariants']),
         imageIndex: json['imageIndex'],
         customScale: json['customScale'],
 

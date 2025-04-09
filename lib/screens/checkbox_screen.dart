@@ -32,6 +32,9 @@ import 'package:share_plus/share_plus.dart';
 // Access stake labels, image variants, and filepaths
 import '../core/stake_data.dart';
 
+//
+import 'dart:convert';
+
 class CheckboxScreen extends StatefulWidget {
   final int maxStakeIndex;
   const CheckboxScreen({super.key, required this.maxStakeIndex});
@@ -48,7 +51,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
   void initState() {
     super.initState();
     // Replace loading saved subtasks w/ loading entire checkbox item's state
-    _initializeCheckboxItems();
+    _initCheckboxItems();
     // Resume when it was the last track played
     if (musicPlayer.currentTrack == 'music/main_theme.mp3') {
       musicPlayer.resume();
@@ -62,10 +65,33 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     }
   }
 
-  Future<void> _initializeCheckboxItems() async {
+  Future<void> _initCheckboxItems() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rawJson = prefs.getString('checkbox_items');
+    print("📦 Raw saved data: $rawJson");
+
     final loaded = await StorageService.loadCheckboxItems();
+    print("🧪 Initializing items... Loaded: ${loaded.length}");
+    for (final item in loaded) {
+      print(
+        "Item: ${item.label}, imageIndex: ${item.imageIndex}, imageVariants: ${item.imageVariants.length}",
+      );
+    }
     // Create set of stakes with empty subtasks if other list exists
     final fallback = stakeTemplates.sublist(0, widget.maxStakeIndex + 1);
+
+    // DEBUG: Check how many stakes were loaded and for missing assets
+    print("🧪 Loaded ${loaded.length} checkbox items");
+
+    for (int i = 0; i < loaded.length; i++) {
+      final item = loaded[i];
+      print(
+        "▶️ Stake $i: label='${item.label}', imageIndex=${item.imageIndex}, "
+        "variants=${item.imageVariants.length}, isChecked=${item.isChecked}, "
+        "subtasks=${item.subtasks.length}",
+      );
+    }
+
     setState(() {
       items = loaded.isEmpty ? fallback : loaded;
     });
@@ -534,13 +560,25 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     }
   }
 
+  Future<void> _saveVariantIndexes(List<CheckboxItem> items) async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<Map<String, dynamic>> data =
+        items.map((item) {
+          return {'imageIndex': item.imageIndex};
+        }).toList();
+    await prefs.setString('variant_indexes', jsonEncode(data));
+  }
+
   // Update build method to show subtasks
   @override
   Widget build(BuildContext context) {
+    print("🏗️ Building ${items.length} stake tiles...");
     final whiteWithOpacity = Colors.white.withAlpha(
       204,
     ); // ~80% opacity (255 * 0.8)
-
+    if (items.isEmpty) {
+      return const Center(child: Text("⚠️ No stakes to display"));
+    }
     return Scaffold(
       body: Stack(
         children: [
@@ -697,6 +735,9 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
 
   Widget _buildStakeRow(int index, Color backgroundWhite) {
     final item = items[index];
+    print(
+      "🔹 Building row for '${item.label}' with ${item.subtasks.length} subtasks",
+    );
     return StakeTile(
       item: item,
       index: index,
@@ -742,7 +783,8 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
 
       onVariantChange: () async {
         await SoundService.play('assets/sounds/card_flip.wav');
-        await StorageService.saveCheckboxItems(items); // Save variant index
+        await StorageService.saveCheckboxItems(items);
+        await _saveVariantIndexes(items);
       },
       onToggle: _canCheckStake(index) ? (_) => _toggleCheckbox(index) : null,
       subtaskList: SubtaskList(
