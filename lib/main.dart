@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'screens/start_screen.dart';
 import 'screens/checkbox_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'core/storage_service.dart';
 
 // Required to declare musicPlayer singleton
 import 'core/music_player.dart';
@@ -54,7 +55,6 @@ class _RootAppState extends State<RootApp> with WidgetsBindingObserver {
   Future<void> _initPrefs() async {
     _prefs = await SharedPreferences.getInstance();
 
-    // If user manually chose to return to start, override saved index
     final returnToStart = _prefs.getBool('returnToStart') ?? false;
     if (returnToStart) {
       await _prefs.setBool('returnToStart', false);
@@ -62,9 +62,14 @@ class _RootAppState extends State<RootApp> with WidgetsBindingObserver {
       return;
     }
 
-    // Load maxStakeIndex if it exists
     final savedIndex = _prefs.getInt('maxStakeIndex');
-    if (savedIndex != null) {
+    final items = await StorageService.loadCheckboxItems();
+
+    // Prevent showing an empty stake list on first run
+    if (savedIndex != null && items.isEmpty) {
+      // Force return to start screen
+      setState(() => _maxStakeIndex = null);
+    } else if (savedIndex != null) {
       setState(() {
         _maxStakeIndex = savedIndex;
       });

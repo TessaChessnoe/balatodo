@@ -67,12 +67,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     // Create set of stakes with empty subtasks if other list exists
     final fallback = stakeTemplates.sublist(0, widget.maxStakeIndex + 1);
     setState(() {
-      if (loaded.isNotEmpty) {
-        items = loaded;
-      } else {
-        // Load checkbox items if there are any
-        items = loaded.isEmpty ? fallback : loaded;
-      }
+      items = loaded.isEmpty ? fallback : loaded;
     });
   }
 
