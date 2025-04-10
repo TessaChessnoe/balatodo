@@ -57,6 +57,7 @@ final List<CheckboxItem> stakeTemplates = [
     soundPath: 'assets/sounds/xmult4.wav',
     imageVariants: [
       'assets/images/orange-stake10X.png',
+      'assets/images/variants/garf_stake10X.png',
       'assets/images/variants/baller_stake10X.png',
     ],
   ),
