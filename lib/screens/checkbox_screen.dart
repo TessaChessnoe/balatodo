@@ -110,7 +110,6 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     // Return to start screen after resetting app state
     await prefs.setBool('returnToStart', true); // set flag BEFORE clearing
     await prefs.clear(); // Clear all saved data
-
     if (mounted) {
       Navigator.pushAndRemoveUntil(
         context,
@@ -395,6 +394,58 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     }
 
     await StorageService.saveCheckboxItems(items);
+  }
+
+  void _editSubtask(int stakeIndex, int subtaskIndex) {
+    final controller = TextEditingController(
+      text: items[stakeIndex].subtasks[subtaskIndex].text,
+    );
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Edit Task'),
+            content: TextField(
+              controller: controller,
+              maxLength: 60,
+              maxLengthEnforcement: MaxLengthEnforcement.enforced,
+              decoration: const InputDecoration(hintText: 'Edit task'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final newText = controller.text.trim();
+                  final disallowed = RegExp(r'[<>[\]]');
+                  if (newText.isEmpty || disallowed.hasMatch(newText)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          '❌ Task cannot be empty or contain < > [ ]',
+                        ),
+                        backgroundColor: Colors.red,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
+
+                  setState(() {
+                    items[stakeIndex].subtasks[subtaskIndex].text = newText;
+                  });
+
+                  await StorageService.saveCheckboxItems(items);
+                  if (mounted) Navigator.pop(context);
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          ),
+    );
   }
 
   void _showAddSubtaskDialog(int stakeIndex) {
@@ -709,7 +760,6 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
                         size: 45,
                       ),
                     ),
-
                     // Import task from file button
                     ElevatedButton(
                       onPressed: () async {
@@ -821,6 +871,8 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
         onDelete: (subtaskIndex) => _deleteSubtask(index, subtaskIndex),
         onToggle: (subtaskIndex) => _toggleSubtask(index, subtaskIndex),
         onAdd: () => _showAddSubtaskDialog(index),
+        // Add call back to edit func to act on current subtask in stake
+        onEdit: (subtaskIndex) => _editSubtask(index, subtaskIndex),
       ),
     );
   }

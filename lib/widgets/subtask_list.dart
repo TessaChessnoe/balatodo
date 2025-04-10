@@ -9,6 +9,7 @@ class SubtaskList extends StatelessWidget {
   final void Function(int) onDelete;
   final void Function(int) onToggle;
   final VoidCallback onAdd;
+  final void Function(int) onEdit;
 
   const SubtaskList({
     super.key,
@@ -16,6 +17,7 @@ class SubtaskList extends StatelessWidget {
     required this.onDelete,
     required this.onToggle,
     required this.onAdd,
+    required this.onEdit,
   });
 
   @override
@@ -39,6 +41,8 @@ class SubtaskList extends StatelessWidget {
                 ),
               );
             },
+            // Edit the subtask at the curr index on hold tap
+            onLongPress: () => onEdit(i),
             child: ListTile(
               title: Text(
                 subtask.text,
