@@ -31,8 +31,6 @@ import 'package:share_plus/share_plus.dart';
 
 // Access stake labels, image variants, and filepaths
 import '../core/stake_data.dart';
-
-//
 import 'dart:convert';
 
 class CheckboxScreen extends StatefulWidget {
@@ -46,6 +44,7 @@ class CheckboxScreen extends StatefulWidget {
 class _CheckboxScreenState extends State<CheckboxScreen> {
   // Removed lazy loading to prevent invalid vals before set state
   List<CheckboxItem> items = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -66,6 +65,8 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
   }
 
   Future<void> _initCheckboxItems() async {
+    // DEBUG: Allow me to see loading wheel long enough to find issues
+    //await Future.delayed(Duration(seconds: 1));
     final prefs = await SharedPreferences.getInstance();
     final rawJson = prefs.getString('checkbox_items');
     print("📦 Raw saved data: $rawJson");
@@ -94,6 +95,7 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
 
     setState(() {
       items = loaded.isEmpty ? fallback : loaded;
+      _isLoading = false;
     });
   }
 
@@ -576,8 +578,35 @@ class _CheckboxScreenState extends State<CheckboxScreen> {
     final whiteWithOpacity = Colors.white.withAlpha(
       204,
     ); // ~80% opacity (255 * 0.8)
-    if (items.isEmpty) {
-      return const Center(child: Text("⚠️ No stakes to display"));
+    // if (items.isEmpty) {
+    //   return const Center(child: Text("⚠️ No stakes to display"));
+    // }
+    if (_isLoading) {
+      return Scaffold(
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: FittedBox(
+                fit: BoxFit.cover,
+                child: Image.asset('assets/images/background.jpg'),
+              ),
+            ),
+            const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: Colors.pink),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading checklist...',
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
     }
     return Scaffold(
       body: Stack(
