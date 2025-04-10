@@ -16,7 +16,7 @@ class _WinScreenState extends State<WinScreen> {
   @override
   void initState() {
     super.initState();
-    musicPlayer.play('music/win_theme.wav', volume: 0.8, loop: false);
+    musicPlayer.play('music/win_theme.mp3', volume: 0.8, loop: false);
   }
 
   @override
