@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.temp"
+    namespace = "com.tesspresso.balatodo"
     compileSdk = flutter.compileSdkVersion
     // Minimum ndk for audioplayer package
     ndkVersion = "27.0.12077973"
